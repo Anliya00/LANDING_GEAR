@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # ---------------------------------------------------------------------------
 # Secrets — never commit. .env.example is the committed template.
 # ---------------------------------------------------------------------------
@@ -63,4 +64,21 @@ tnsnames.ora.local
 *.swp
 Thumbs.db
 desktop.ini
+=======
+node_modules/
+.env
+.env.local
+
+
+dist/
+build/
+
+coverage/
+
+*.log
+
+.vscode/
+.idea/
+
+>>>>>>> 4041d880332bddab4ab904d038eee08f42e06e36
 .DS_Store
