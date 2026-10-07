@@ -1,0 +1,161 @@
+/* ---------------------------------------------------------------------------
+   SFTAD design tokens.
+
+   Two themes, one token set. Components never reference a raw hex value.
+
+   Colour discipline, from the design constraints:
+   - The aviation colours (engaged / caution / warning / reference / selected)
+     carry meaning only. They are never used as decoration, never as brand,
+     never as a background wash.
+   - There is deliberately no "pass" or "within limit" token. No design limits
+     have been certified, so the interface has no vocabulary for clearing a
+     value. Computation status is a separate, neutral scale below.
+   --------------------------------------------------------------------------- */
+
+:root {
+  /* Type ------------------------------------------------------------------ */
+  --font-sans: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', monospace;
+
+  --text-xs: 0.75rem;    /* 12px  dense table meta */
+  --text-sm: 0.8125rem;  /* 13px  table body, labels */
+  --text-base: 0.875rem; /* 14px  UI default — desktop, dense, hours at a time */
+  --text-md: 1rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.75rem;
+  --text-2xl: 2.25rem;
+
+  --leading-tight: 1.2;
+  --leading-normal: 1.5;
+
+  /* Space — 4px base ------------------------------------------------------ */
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 24px;
+  --s6: 32px;
+  --s7: 48px;
+  --s8: 64px;
+
+  /* Radius — restrained. Nothing floats, so nothing needs to look soft. */
+  --r-sm: 2px;
+  --r-md: 4px;
+  --r-lg: 6px;
+
+  /* Motion */
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --dur-fast: 120ms;
+  --dur-med: 200ms;
+
+  --z-modal: 100;
+  --z-toast: 200;
+}
+
+/* --- Light ----------------------------------------------------------------
+   Bone paper, graphite ink. Warm enough to read for hours without the
+   blue-white glare of a default #FFFFFF panel.
+   ------------------------------------------------------------------------- */
+:root,
+[data-theme='light'] {
+  --bg: #f2f1ed;
+  --bg-raised: #fbfaf8;
+  --bg-sunken: #e8e7e2;
+  --bg-inset: #ddddd7;
+
+  --ink: #1b1d1f;
+  --ink-strong: #0d0e10;
+  --ink-muted: #5c6066;
+  --ink-faint: #8b9099;
+
+  --rule: #d2d1cb;
+  --rule-strong: #b6b5ae;
+
+  --accent: #1a5fb4;
+  --accent-hover: #174f96;
+  --accent-ink: #ffffff;
+  --accent-soft: #e3ecf8;
+
+  /* Aviation language — meaning only */
+  --engaged: #1a7f45;
+  --engaged-soft: #e0f0e6;
+  --caution: #a66a00;
+  --caution-soft: #fbeeda;
+  --warning: #b3261e;
+  --warning-soft: #fae3e1;
+  --reference: #0f6f84;
+  --reference-soft: #ddf0f4;
+  --selected: #9c27a0;
+  --selected-soft: #f6e4f7;
+
+  /* Computation status — neutral, no conformance meaning */
+  --st-computed: #3f4448;
+  --st-computed-soft: #e4e4df;
+  --st-pending: #5c6066;
+  --st-pending-soft: #e8e7e2;
+  --st-incomplete: #a66a00;
+  --st-incomplete-soft: #fbeeda;
+  --st-failed: #b3261e;
+  --st-failed-soft: #fae3e1;
+
+  /* Data provenance */
+  --declared: #a66a00;      /* user-typed date, unverified */
+  --verified: #3f4448;      /* derived from data */
+  --tier-decimated: #8b9099;
+  --tier-native: #1b1d1f;
+
+  --focus: #1a5fb4;
+  --shadow-modal: 0 8px 28px rgba(20, 22, 24, 0.18);
+}
+
+/* --- Dark -----------------------------------------------------------------
+   Ink ground with a faint blue cast, not a tinted near-black. Panels are
+   separated by rules and a half-step of lightness, not by shadow.
+   ------------------------------------------------------------------------- */
+[data-theme='dark'] {
+  --bg: #0e1418;
+  --bg-raised: #151d22;
+  --bg-sunken: #0a0f12;
+  --bg-inset: #1d262c;
+
+  --ink: #dfe4e7;
+  --ink-strong: #f2f5f6;
+  --ink-muted: #949da3;
+  --ink-faint: #6b757c;
+
+  --rule: #26323a;
+  --rule-strong: #38474f;
+
+  --accent: #4a90e2;
+  --accent-hover: #67a4ea;
+  --accent-ink: #06202f;
+  --accent-soft: #15293a;
+
+  --engaged: #3ddc84;
+  --engaged-soft: #102d1d;
+  --caution: #ffb020;
+  --caution-soft: #33260a;
+  --warning: #ff5a4e;
+  --warning-soft: #341614;
+  --reference: #38d6f0;
+  --reference-soft: #0c2b33;
+  --selected: #e072f0;
+  --selected-soft: #2c1331;
+
+  --st-computed: #b4bcc1;
+  --st-computed-soft: #1d262c;
+  --st-pending: #949da3;
+  --st-pending-soft: #161e23;
+  --st-incomplete: #ffb020;
+  --st-incomplete-soft: #33260a;
+  --st-failed: #ff5a4e;
+  --st-failed-soft: #341614;
+
+  --declared: #ffb020;
+  --verified: #b4bcc1;
+  --tier-decimated: #6b757c;
+  --tier-native: #dfe4e7;
+
+  --focus: #67a4ea;
+  --shadow-modal: 0 8px 28px rgba(0, 0, 0, 0.55);
+}

@@ -1,0 +1,66 @@
+# ---------------------------------------------------------------------------
+# Secrets — never commit. .env.example is the committed template.
+# ---------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+
+# ---------------------------------------------------------------------------
+# Python
+# ---------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+build/
+dist/
+
+# ---------------------------------------------------------------------------
+# Node
+# ---------------------------------------------------------------------------
+node_modules/
+frontend/dist/
+.vite/
+npm-debug.log*
+yarn-error.log*
+
+# package-lock.json is deliberately NOT ignored — it pins transitive
+# dependency versions so another machine builds identically.
+
+# ---------------------------------------------------------------------------
+# Flight data and derived artefacts
+#
+# The watch folder and the Parquet store hold ~500 MB per flight. They are
+# data, not source, and must never enter version control. The directory
+# structure is kept via .gitkeep files so a fresh clone still has the layout.
+# ---------------------------------------------------------------------------
+data/
+*.xlsx
+*.xlsm
+*.parquet
+*.duckdb
+*.duckdb.wal
+
+# ---------------------------------------------------------------------------
+# Oracle client artefacts and SQL scratch
+# ---------------------------------------------------------------------------
+*.dmp
+*.log
+sqlnet.log
+tnsnames.ora.local
+
+# ---------------------------------------------------------------------------
+# Editors and OS
+# ---------------------------------------------------------------------------
+.vscode/
+.idea/
+*.swp
+Thumbs.db
+desktop.ini
+.DS_Store
