@@ -3,7 +3,6 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthProvider';
 import { ApiError } from '@/api/client';
 import { useTheme } from '@/theme/ThemeProvider';
-import { GearSchematic } from './GearSchematic';
 import './login.css';
 
 const CDAC_LOGO = '/logos/cdac.png';
@@ -11,6 +10,26 @@ const HAL_LOGO = '/logos/hal.png';
 
 interface LocationState {
   from?: string;
+}
+
+function UserIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
+      strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+      <circle cx="12" cy="7" r="4" />
+    </svg>
+  );
+}
+
+function LockIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
+      strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="3" y="11" width="18" height="11" rx="2" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </svg>
+  );
 }
 
 export default function LoginPage() {
@@ -27,7 +46,6 @@ export default function LoginPage() {
 
   const destination = (location.state as LocationState | null)?.from ?? '/flights';
 
-  // Already signed in — a stale /login tab should not sit there asking again.
   useEffect(() => {
     if (status === 'ready' && user) {
       navigate(destination, { replace: true });
@@ -56,57 +74,24 @@ export default function LoginPage() {
 
   return (
     <div className="login">
-      <aside className="login-plate">
+      <div className="login-bg" />
+
+      <header className="login-header">
         <div className="login-orgs">
           <img src={CDAC_LOGO} alt="C-DAC" />
           <div className="org-rule" />
           <img src={HAL_LOGO} alt="HAL" />
         </div>
+        <p className="login-tagline">Flight Data Analysis &amp; Diagnostics</p>
+      </header>
 
-        <div className="login-plate-drawing">
-          <GearSchematic />
-        </div>
-
-        <div>
-          <div className="login-plate-caption">
-            <h2>Landing gear flight test data, measured rather than assumed</h2>
-            <p>
-              SFTAD reads recorded flight test files, detects the switch
-              transitions that bound each gear cycle, and computes the landing
-              gear parameters from them — with every value traceable to the
-              events that produced it.
-            </p>
-          </div>
-
-          <div className="login-plate-legend">
-            <span>
-              <b>6</b> files per flight
-            </span>
-            <span>
-              <b>8</b> computed parameters
-            </span>
-            <span>
-              <b>72</b> minutes recorded
-            </span>
-            <span>
-              <b>µs</b> timestamp resolution
-            </span>
-          </div>
-        </div>
-      </aside>
-
-      <main className="login-panel">
-        <div className="login-form-wrap">
-          <div className="login-orgs-compact">
-            <img src={CDAC_LOGO} alt="C-DAC" />
-            <img src={HAL_LOGO} alt="HAL" />
-          </div>
-
-          <p className="login-brand">SFTAD</p>
-          <h1>Sign in</h1>
-          <p className="login-sub">
-            Smart Flight Test Analytics Dashboard — landing gear group.
-          </p>
+      <main className="login-body">
+        <div className="login-card">
+          <h1>
+            Welcome to
+            <span className="product">SFTAD</span>
+          </h1>
+          <p className="login-sub">Smart Flight Test Analytics Dashboard</p>
 
           <form className="login-form" onSubmit={handleSubmit} noValidate>
             {error && (
@@ -115,11 +100,13 @@ export default function LoginPage() {
               </div>
             )}
 
-            <div className="field">
-              <label htmlFor="username">Username</label>
+            <div className="field-icon">
+              <UserIcon />
               <input
                 id="username"
                 name="username"
+                aria-label="Username"
+                placeholder="Username"
                 autoComplete="username"
                 autoFocus
                 required
@@ -128,18 +115,24 @@ export default function LoginPage() {
               />
             </div>
 
-            <div className="field">
-              <label htmlFor="password">Password</label>
+            <div className="field-icon">
+              <LockIcon />
               <input
                 id="password"
                 name="password"
                 type="password"
+                aria-label="Password"
+                placeholder="Password"
                 autoComplete="current-password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
+
+            <button className="btn-primary" type="submit" disabled={busy}>
+              {busy ? 'Signing in…' : 'Sign in'}
+            </button>
 
             <div className="login-row">
               <label className="check" htmlFor="remember">
@@ -149,31 +142,25 @@ export default function LoginPage() {
                   checked={remember}
                   onChange={(e) => setRemember(e.target.checked)}
                 />
-                Keep me signed in
+                Remember me
               </label>
-              <span className="login-note">
-                Your role is set by your administrator
-              </span>
+              <span className="login-note">Role is set by your administrator</span>
             </div>
-
-            <button className="btn-primary" type="submit" disabled={busy}>
-              {busy ? 'Signing in…' : 'Sign in'}
-            </button>
           </form>
-
-          <div className="login-foot">
-            <span>SFTAD v0.1 · Proof of concept</span>
-            <button
-              type="button"
-              className="theme-toggle"
-              onClick={toggle}
-              aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} theme`}
-            >
-              {theme === 'light' ? 'Dark' : 'Light'}
-            </button>
-          </div>
         </div>
       </main>
+
+      <footer className="login-footer">
+        <span>SFTAD v0.1 · Proof of concept</span>
+        <button
+          type="button"
+          className="theme-toggle"
+          onClick={toggle}
+          aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} theme`}
+        >
+          {theme === 'light' ? 'Dark' : 'Light'}
+        </button>
+      </footer>
     </div>
   );
 }

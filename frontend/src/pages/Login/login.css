@@ -1,143 +1,151 @@
+/* ---------------------------------------------------------------------------
+   Login — full-bleed photographic ground, centred card.
+
+   The background image is supplied at /bg/login.jpg. Until it exists the
+   gradient below stands in, so the page is never broken by a missing asset.
+   --------------------------------------------------------------------------- */
+
 .login {
-  display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(430px, 0.85fr);
+  position: relative;
   min-height: 100%;
-  background: var(--bg);
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  background-color: #0b1620;
+  background-image: linear-gradient(135deg, #0d1f2d 0%, #16384e 45%, #2b5771 100%);
 }
 
-/* --- Left: the drawing ---------------------------------------------------- */
+.login-bg {
+  position: absolute;
+  inset: 0;
+  background-image: var(--login-bg-image);
+  background-size: cover;
+  background-position: center 60%;
+  z-index: 0;
+}
+:root,
+[data-theme='light'] {
+  --login-bg-image: url('/bg/login-light.jpg');
+  --login-scrim: linear-gradient(
+    100deg,
+    rgba(10, 22, 32, 0.62) 0%,
+    rgba(10, 22, 32, 0.42) 45%,
+    rgba(10, 22, 32, 0.26) 100%
+  );
+}
 
-.login-plate {
+[data-theme='dark'] {
+  --login-bg-image: url('/bg/login-dark.jpg');
+  --login-scrim: linear-gradient(
+    100deg,
+    rgba(4, 10, 15, 0.84) 0%,
+    rgba(4, 10, 15, 0.66) 45%,
+    rgba(4, 10, 15, 0.44) 100%
+  );
+}
+
+/* Scrim. The card sits on photography, and text over an unknown photograph
+   is unreadable without one. Heavier on the left where the card sits. */
+.login-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--login-scrim);
+}
+
+/* --- Header band: the two organisation logos --------------------------- */
+
+.login-header {
   position: relative;
+  z-index: 1;
   display: flex;
-  flex-direction: column;
+  align-items: center;
   justify-content: space-between;
-  padding: var(--s7);
-  background: var(--bg-sunken);
-  border-right: 1px solid var(--rule);
-  overflow: hidden;
+  gap: var(--s5);
+  padding: var(--s5) var(--s7);
 }
 
 .login-orgs {
-  position: relative;
-  z-index: 1;
   display: flex;
   align-items: center;
   gap: var(--s5);
 }
 
 .login-orgs img {
-  height: 46px;
+  height: 54px;
   width: auto;
   display: block;
 }
 
 .login-orgs .org-rule {
   width: 1px;
-  align-self: stretch;
-  background: var(--rule-strong);
+  height: 40px;
+  background: rgba(255, 255, 255, 0.28);
 }
 
-.login-plate-drawing {
-  position: absolute;
-  inset: 0;
+.login-tagline {
+  font-size: var(--text-md);
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.92);
+  text-align: right;
+}
+
+/* --- Card --------------------------------------------------------------- */
+
+.login-body {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--ink);
-  opacity: 0.28;
-  pointer-events: none;
+  padding: var(--s5) var(--s7) var(--s7);
 }
 
-.login-plate-drawing svg {
-  width: min(78%, 560px);
-  height: auto;
-}
-
-[data-theme='dark'] .login-plate-drawing {
-  opacity: 0.22;
-}
-
-.login-plate-caption {
-  position: relative;
-  z-index: 1;
-  max-width: 44ch;
-}
-
-.login-plate-caption h2 {
-  font-size: var(--text-lg);
-  font-weight: 500;
-  line-height: var(--leading-tight);
-  color: var(--ink-strong);
-}
-
-.login-plate-caption p {
-  margin-top: var(--s3);
-  color: var(--ink-muted);
-}
-
-.login-plate-legend {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--s2) var(--s5);
-  margin-top: var(--s5);
-  padding-top: var(--s4);
-  border-top: 1px solid var(--rule);
-  font-size: var(--text-sm);
-  color: var(--ink-faint);
-}
-
-.login-plate-legend span {
-  display: inline-flex;
-  align-items: baseline;
-  gap: var(--s2);
-}
-
-.login-plate-legend b {
-  font-family: var(--font-mono);
-  font-weight: 500;
-  font-size: var(--text-xs);
-  color: var(--ink-muted);
-}
-
-/* --- Right: the form ------------------------------------------------------ */
-
-.login-panel {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding: var(--s7) clamp(var(--s6), 6vw, var(--s8));
-  background: var(--bg-raised);
-}
-
-.login-form-wrap {
+.login-card {
   width: 100%;
-  max-width: 380px;
-  margin-inline: auto;
+  max-width: 480px;
+  padding: var(--s7) clamp(var(--s6), 5vw, 56px);
+  background: var(--card-bg);
+  border: 1px solid var(--card-rule);
+  border-radius: 14px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
 }
 
-.login-brand {
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  letter-spacing: 0.04em;
-  color: var(--ink-faint);
+:root,
+[data-theme='light'] {
+  --card-bg: #ffffff;
+  --card-rule: rgba(0, 0, 0, 0.06);
 }
 
-.login-panel h1 {
-  margin-top: var(--s2);
-  font-size: var(--text-2xl);
+[data-theme='dark'] {
+  --card-bg: #101a22;
+  --card-rule: rgba(255, 255, 255, 0.09);
+}
+
+.login-card h1 {
+  font-size: var(--text-xl);
   font-weight: 600;
-  line-height: var(--leading-tight);
-  letter-spacing: -0.015em;
+  line-height: 1.15;
+  text-align: center;
   color: var(--ink-strong);
+}
+
+.login-card h1 .product {
+  display: block;
+  margin-top: var(--s1);
+  font-size: var(--text-3xl);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--accent);
 }
 
 .login-sub {
-  margin-top: var(--s2);
+  margin-top: var(--s3);
+  text-align: center;
+  font-size: var(--text-md);
   color: var(--ink-muted);
 }
+
+/* --- Form --------------------------------------------------------------- */
 
 .login-form {
   margin-top: var(--s6);
@@ -146,52 +154,68 @@
   gap: var(--s4);
 }
 
-.field {
+.field-icon {
+  position: relative;
   display: flex;
-  flex-direction: column;
-  gap: var(--s2);
+  align-items: center;
 }
 
-.field label {
-  font-size: var(--text-sm);
-  font-weight: 500;
+.field-icon svg {
+  position: absolute;
+  left: 16px;
+  width: 20px;
+  height: 20px;
+  color: var(--ink-faint);
+  pointer-events: none;
+}
+
+.field-icon input {
+  width: 100%;
+  height: 54px;
+  padding: 0 var(--s4) 0 48px;
+  font-size: var(--text-md);
   color: var(--ink);
+  background: var(--bg-sunken);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  transition:
+    border-color var(--dur-fast) var(--ease),
+    background var(--dur-fast) var(--ease);
 }
 
-.field input,
-.field select {
-  height: 42px;
-  padding: 0 var(--s3);
-  background: var(--bg);
-  color: var(--ink);
-  border: 1px solid var(--rule-strong);
-  border-radius: var(--r-md);
-  transition: border-color var(--dur-fast) var(--ease);
-}
-
-.field select {
-  appearance: none;
-  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
-    linear-gradient(135deg, currentColor 50%, transparent 50%);
-  background-position: calc(100% - 18px) 19px, calc(100% - 13px) 19px;
-  background-size: 5px 5px, 5px 5px;
-  background-repeat: no-repeat;
-  padding-right: var(--s6);
-}
-
-.field input::placeholder {
+.field-icon input::placeholder {
   color: var(--ink-faint);
 }
 
-.field input:hover,
-.field select:hover {
-  border-color: var(--ink-faint);
+.field-icon input:hover {
+  border-color: var(--rule-strong);
 }
 
-.field-hint {
-  font-size: var(--text-xs);
-  color: var(--ink-faint);
-  min-height: 1em;
+.field-icon input:focus {
+  background: var(--bg-raised);
+  border-color: var(--accent);
+}
+
+.btn-primary {
+  height: 54px;
+  margin-top: var(--s2);
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--accent-ink);
+  background: var(--accent);
+  border: 0;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: progress;
 }
 
 .login-row {
@@ -199,6 +223,7 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--s3);
+  margin-top: var(--s1);
 }
 
 .check {
@@ -211,121 +236,75 @@
 }
 
 .check input {
-  width: 15px;
-  height: 15px;
+  width: 17px;
+  height: 17px;
   accent-color: var(--accent);
   cursor: pointer;
 }
 
-.link-btn {
-  background: none;
-  border: 0;
-  padding: 0;
+.login-note {
   font-size: var(--text-sm);
-  color: var(--accent);
-  cursor: pointer;
-  border-radius: var(--r-sm);
-}
-
-.link-btn:hover {
-  text-decoration: underline;
-}
-
-.btn-primary {
-  height: 44px;
-  background: var(--accent);
-  color: var(--accent-ink);
-  border: 1px solid var(--accent);
-  border-radius: var(--r-md);
-  font-weight: 500;
-  cursor: pointer;
-  transition: background var(--dur-fast) var(--ease);
-}
-
-.btn-primary:hover:not(:disabled) {
-  background: var(--accent-hover);
-  border-color: var(--accent-hover);
-}
-
-.btn-primary:disabled {
-  opacity: 0.55;
-  cursor: progress;
+  color: var(--ink-faint);
 }
 
 .login-error {
-  display: flex;
-  gap: var(--s2);
-  padding: var(--s3);
+  padding: var(--s3) var(--s4);
   font-size: var(--text-sm);
   color: var(--warning);
   background: var(--warning-soft);
   border: 1px solid var(--warning);
-  border-radius: var(--r-md);
+  border-radius: 8px;
 }
 
-.login-foot {
-  margin-top: var(--s6);
-  padding-top: var(--s4);
-  border-top: 1px solid var(--rule);
+/* --- Footer ------------------------------------------------------------- */
+
+.login-footer {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--s3);
-  font-size: var(--text-xs);
-  color: var(--ink-faint);
+  gap: var(--s4);
+  padding: var(--s4) var(--s7) var(--s5);
+  font-size: var(--text-sm);
+  color: rgba(255, 255, 255, 0.72);
 }
 
 .theme-toggle {
   display: inline-flex;
   align-items: center;
   gap: var(--s2);
-  padding: var(--s1) var(--s2);
-  background: none;
-  border: 1px solid var(--rule);
-  border-radius: var(--r-md);
-  font-size: var(--text-xs);
-  color: var(--ink-muted);
+  padding: var(--s2) var(--s3);
+  font-size: var(--text-sm);
+  color: rgba(255, 255, 255, 0.88);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
   cursor: pointer;
+  backdrop-filter: blur(4px);
 }
 
 .theme-toggle:hover {
-  border-color: var(--ink-faint);
-  color: var(--ink);
+  background: rgba(255, 255, 255, 0.18);
 }
 
-/* --- Narrow ---------------------------------------------------------------
-   Desktop-only product, but the drawing panel is the first thing to go when
-   the window is dragged narrow, rather than letting the form crush.
-   ------------------------------------------------------------------------- */
-@media (max-width: 980px) {
-  .login {
-    grid-template-columns: 1fr;
+/* --- Narrow ------------------------------------------------------------- */
+
+@media (max-width: 720px) {
+  .login-header,
+  .login-footer {
+    padding-inline: var(--s5);
   }
-  .login-plate {
+  .login-orgs img {
+    height: 40px;
+  }
+  .login-tagline {
     display: none;
   }
-  .login-panel {
+  .login-body {
+    padding: var(--s5);
+  }
+  .login-card {
     padding: var(--s6) var(--s5);
   }
-  .login-orgs-compact {
-    display: flex;
-  }
-}
-
-.login-orgs-compact {
-  display: none;
-  align-items: center;
-  gap: var(--s4);
-  margin-bottom: var(--s5);
-}
-
-.login-orgs-compact img {
-  height: 36px;
-  width: auto;
-}
-
-.login-note {
-  font-size: var(--text-xs);
-  color: var(--ink-faint);
-  text-align: right;
 }
