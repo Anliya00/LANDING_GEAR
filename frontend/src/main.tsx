@@ -5,6 +5,7 @@ import { ThemeProvider } from './theme/ThemeProvider';
 import { AuthProvider } from './auth/AuthProvider';
 import App from './App';
 import './theme/base.css';
+import './app/shell.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

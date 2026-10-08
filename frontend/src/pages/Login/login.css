@@ -24,7 +24,7 @@
 }
 :root,
 [data-theme='light'] {
-  --login-bg-image: url('/bg/login-light.jpg');
+  --login-bg-image: url('/bg/login-light.png');
   --login-scrim: linear-gradient(
     100deg,
     rgba(10, 22, 32, 0.62) 0%,
@@ -34,7 +34,7 @@
 }
 
 [data-theme='dark'] {
-  --login-bg-image: url('/bg/login-dark.jpg');
+  --login-bg-image: url('/bg/login-dark.png');
   --login-scrim: linear-gradient(
     100deg,
     rgba(4, 10, 15, 0.84) 0%,
@@ -58,28 +58,8 @@
   position: relative;
   z-index: 1;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--s5);
+  justify-content: flex-end;
   padding: var(--s5) var(--s7);
-}
-
-.login-orgs {
-  display: flex;
-  align-items: center;
-  gap: var(--s5);
-}
-
-.login-orgs img {
-  height: 54px;
-  width: auto;
-  display: block;
-}
-
-.login-orgs .org-rule {
-  width: 1px;
-  height: 40px;
-  background: rgba(255, 255, 255, 0.28);
 }
 
 .login-tagline {
@@ -87,6 +67,46 @@
   font-weight: 500;
   color: rgba(255, 255, 255, 0.92);
   text-align: right;
+}
+
+/* Co-branding strip at the top of the card. It carries its own light
+   surface because the logo artwork is fixed dark-navy and cannot sit on
+   the dark card. Inside the card this reads as a masthead rather than as
+   a patch on the photograph. */
+.card-orgs {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s4);
+  margin: calc(var(--s7) * -1) calc(var(--s6) * -1) var(--s5);
+  padding: var(--s4) var(--s5);
+  border-radius: 14px 14px 0 0;
+  border-bottom: 1px solid var(--card-rule);
+}
+
+[data-theme='dark'] .card-orgs img.logo-cdac {
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: #d7dfe8;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+}
+
+.card-orgs img.logo-cdac {
+  height: 54px;
+  width: auto;
+  display: block;
+}
+
+.card-orgs img.logo-hal {
+  height: 52px;
+  width: auto;
+  display: block;
+}
+
+.card-orgs .org-rule {
+  width: 1px;
+  height: 32px;
+  background: rgba(0, 0, 0, 0.14);
 }
 
 /* --- Card --------------------------------------------------------------- */
@@ -112,8 +132,8 @@
 
 :root,
 [data-theme='light'] {
-  --card-bg: #ffffff;
-  --card-rule: rgba(0, 0, 0, 0.06);
+  --card-bg: #f6f4f0;
+  --card-rule: rgba(28, 26, 22, 0.1);
 }
 
 [data-theme='dark'] {
@@ -295,9 +315,8 @@
   .login-footer {
     padding-inline: var(--s5);
   }
-  .login-orgs img {
-    height: 40px;
-  }
+  .login-orgs img.logo-cdac { height: 32px; }
+  .login-orgs img.logo-hal { height: 46px; }
   .login-tagline {
     display: none;
   }

@@ -1,26 +1,12 @@
-import { useEffect, useState, type FormEvent } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useState, type FormEvent } from 'react';
 import { useAuth } from '@/auth/AuthProvider';
+import { authApi } from '@/api/auth';
 import { ApiError } from '@/api/client';
 import { useTheme } from '@/theme/ThemeProvider';
-import './login.css'
+import './login.css';
 
 const CDAC_LOGO = '/logos/cdac.png';
 const HAL_LOGO = '/logos/hal.png';
-
-interface LocationState {
-  from?: string;
-}
-
-function UserIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
-      strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-      <circle cx="12" cy="7" r="4" />
-    </svg>
-  );
-}
 
 function LockIcon() {
   return (
@@ -32,40 +18,43 @@ function LockIcon() {
   );
 }
 
-export default function LoginPage() {
-  const { signIn, user, status } = useAuth();
+export default function ChangePasswordPage() {
+  const { user, refresh } = useAuth();
   const { theme, toggle } = useTheme();
-  const navigate = useNavigate();
-  const location = useLocation();
 
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [remember, setRemember] = useState(false);
+  const [current, setCurrent] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const destination = (location.state as LocationState | null)?.from ?? '/flights';
-
-  useEffect(() => {
-    if (status === 'ready' && user) {
-      navigate(destination, { replace: true });
-    }
-  }, [status, user, destination, navigate]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (busy) return;
+    
+    if (newPassword !== confirm) {
+      setError('New passwords do not match.');
+      return;
+    }
+
+    if (newPassword.length < 12) {
+      setError('New password must be at least 12 characters.');
+      return;
+    }
+
     setError(null);
     setBusy(true);
     try {
-      await signIn(username.trim(), password, remember);
-      navigate(destination, { replace: true });
+      await authApi.changePassword(current, newPassword);
+      // Success. Session is revoked on the server.
+      // Refreshing will fetch /auth/me, get a 401, and clear the session state.
+      // The RequireAuth guard will then automatically redirect to /login.
+      await refresh();
     } catch (err) {
-      setPassword('');
       setError(
         err instanceof ApiError
           ? err.message
-          : 'Sign-in failed. Try again, or contact your administrator.',
+          : 'Failed to change password. Try again.',
       );
     } finally {
       setBusy(false);
@@ -87,11 +76,15 @@ export default function LoginPage() {
             <div className="org-rule" />
             <img src={HAL_LOGO} alt="HAL" className="logo-hal" />
           </div>
-          <h1>
-            Welcome to
-            <span className="product">SFTAD</span>
+          
+          <h1 style={{ marginBottom: 4 }}>
+            Update your password
           </h1>
-          <p className="login-sub">Smart Flight Test Analytics Dashboard</p>
+          {user?.must_change_password && (
+            <p className="login-sub" style={{ marginBottom: 24, color: 'var(--ink-muted)' }}>
+              Your administrator requires you to change your password before continuing.
+            </p>
+          )}
 
           <form className="login-form" onSubmit={handleSubmit} noValidate>
             {error && (
@@ -101,51 +94,51 @@ export default function LoginPage() {
             )}
 
             <div className="field-icon">
-              <UserIcon />
+              <LockIcon />
               <input
-                id="username"
-                name="username"
-                aria-label="Username"
-                placeholder="Username"
-                autoComplete="username"
+                id="current_password"
+                type="password"
+                aria-label="Current Password"
+                placeholder="Current Password"
+                autoComplete="current-password"
                 autoFocus
                 required
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                value={current}
+                onChange={(e) => setCurrent(e.target.value)}
               />
             </div>
 
             <div className="field-icon">
               <LockIcon />
               <input
-                id="password"
-                name="password"
+                id="new_password"
                 type="password"
-                aria-label="Password"
-                placeholder="Password"
-                autoComplete="current-password"
+                aria-label="New Password"
+                placeholder="New Password (min 12 characters)"
+                autoComplete="new-password"
                 required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+              />
+            </div>
+
+            <div className="field-icon">
+              <LockIcon />
+              <input
+                id="confirm_password"
+                type="password"
+                aria-label="Confirm New Password"
+                placeholder="Confirm New Password"
+                autoComplete="new-password"
+                required
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
               />
             </div>
 
             <button className="btn-primary" type="submit" disabled={busy}>
-              {busy ? 'Signing in…' : 'Sign in'}
+              {busy ? 'Updating…' : 'Update Password'}
             </button>
-
-            <div className="login-row">
-              <label className="check" htmlFor="remember">
-                <input
-                  id="remember"
-                  type="checkbox"
-                  checked={remember}
-                  onChange={(e) => setRemember(e.target.checked)}
-                />
-                Remember me
-              </label>
-              <span className="login-note">Role is set by your administrator</span>
-            </div>
           </form>
         </div>
       </main>

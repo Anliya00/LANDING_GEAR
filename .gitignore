@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # ---------------------------------------------------------------------------
 # Secrets — never commit. .env.example is the committed template.
 # ---------------------------------------------------------------------------
@@ -30,16 +29,13 @@ frontend/dist/
 .vite/
 npm-debug.log*
 yarn-error.log*
+coverage/
 
 # package-lock.json is deliberately NOT ignored — it pins transitive
 # dependency versions so another machine builds identically.
 
 # ---------------------------------------------------------------------------
 # Flight data and derived artefacts
-#
-# The watch folder and the Parquet store hold ~500 MB per flight. They are
-# data, not source, and must never enter version control. The directory
-# structure is kept via .gitkeep files so a fresh clone still has the layout.
 # ---------------------------------------------------------------------------
 data/
 *.xlsx
@@ -64,21 +60,4 @@ tnsnames.ora.local
 *.swp
 Thumbs.db
 desktop.ini
-=======
-node_modules/
-.env
-.env.local
-
-
-dist/
-build/
-
-coverage/
-
-*.log
-
-.vscode/
-.idea/
-
->>>>>>> 4041d880332bddab4ab904d038eee08f42e06e36
 .DS_Store

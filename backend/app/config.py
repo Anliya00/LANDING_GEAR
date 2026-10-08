@@ -25,6 +25,9 @@ class Settings(BaseSettings):
     max_failed_attempts: int = 8
     lockout_minutes: int = 15
 
+    # Storage
+    data_dir: str = "../data"
+
     # CORS — comma separated
     cors_origins: str = "http://localhost:5173"
 

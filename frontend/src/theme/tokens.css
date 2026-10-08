@@ -1,35 +1,149 @@
-/* ---------------------------------------------------------------------------
-   SFTAD design tokens.
+/* ===========================================================================
+   SFTAD design tokens
+   Palette from the agreed colour reference. Status colours carry engineering
+   meaning only — green engaged, amber caution, red warning, blue reference.
+   There is deliberately no pass/fail token: no limits have been certified.
+   =========================================================================== */
 
-   Two themes, one token set. Components never reference a raw hex value.
+:root,
+[data-theme='light'] {
+  /* Brand */
+  --accent: #1677ff;
+  --accent-hover: #0866e8;
+  --accent-soft: #e8f2ff;
+  --accent-ink: #ffffff;
 
-   Colour discipline, from the design constraints:
-   - The aviation colours (engaged / caution / warning / reference / selected)
-     carry meaning only. They are never used as decoration, never as brand,
-     never as a background wash.
-   - There is deliberately no "pass" or "within limit" token. No design limits
-     have been certified, so the interface has no vocabulary for clearing a
-     value. Computation status is a separate, neutral scale below.
-   --------------------------------------------------------------------------- */
+  /* Surfaces */
+  --bg: #ffffff;
+  --bg-raised: #ffffff;
+  --bg-sunken: #f8fafc;
+  --surface-2: #f1f6fc;
+  --surface-hover: #eaf3ff;
+
+  /* Ink */
+  --ink-strong: #102a43;
+  --ink: #102a43;
+  --ink-muted: #52677d;
+  --ink-faint: #8293a6;
+
+  /* Lines */
+  --rule: #d9e3ee;
+  --rule-strong: #c3d2e2;
+  --divider: #e7eef5;
+
+  /* Engineering status */
+  --engaged: #16a66a;
+  --engaged-soft: #e8f8f1;
+  --caution: #f59e0b;
+  --caution-soft: #fff6dd;
+  --warning: #ef4444;
+  --warning-soft: #fdecec;
+  --info: #3b82f6;
+  --info-soft: #eaf3ff;
+
+  /* Shell */
+  --shell-bg: #eff5fd;
+  --shell-border: #dbe6f2;
+  --topbar-bg: #ffffff;
+  --nav-fg: #44586e;
+  --nav-fg-active: #ffffff;
+  --nav-bg-active: #1677ff;
+  --nav-bg-hover: #e1ecfa;
+  --nav-label: #7d8fa3;
+  --art-stroke: rgba(22, 119, 255, 0.26);
+}
+
+[data-theme='dark'] {
+  --accent: #1683ff;
+  --accent-hover: #3295ff;
+  --accent-soft: #082f55;
+  --accent-ink: #ffffff;
+
+  --bg: #061827;
+  --bg-raised: #0a2236;
+  --bg-sunken: #102d43;
+  --surface-2: #0e2b42;
+  --surface-hover: #123a56;
+
+  --ink-strong: #f5f9ff;
+  --ink: #f5f9ff;
+  --ink-muted: #b8c9d9;
+  --ink-faint: #7f96aa;
+
+  --rule: #214057;
+  --rule-strong: #2d5571;
+  --divider: #18364c;
+
+  --engaged: #16c784;
+  --engaged-soft: #063d2c;
+  --caution: #f59e0b;
+  --caution-soft: #4a3005;
+  --warning: #ef4444;
+  --warning-soft: #4a1212;
+  --info: #3b82f6;
+  --info-soft: #082f55;
+
+  --shell-bg: #041321;
+  --shell-border: #214057;
+  --topbar-bg: #0a2236;
+  --nav-fg: #b8c9d9;
+  --nav-fg-active: #ffffff;
+  --nav-bg-active: #087bff;
+  --nav-bg-hover: #123a56;
+  --nav-label: #7f96aa;
+  --art-stroke: rgba(91, 167, 255, 0.30);
+}
+
+/* --- Type ---------------------------------------------------------------- */
 
 :root {
-  /* Type ------------------------------------------------------------------ */
-  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', monospace;
+  --text-xs:   12px;
+  --text-sm:   14px;
+  --text-base: 15px;
+  --text-md:   16px;
+  --text-lg:   18px;
+  --text-xl:   22px;
+  --text-2xl:  26px;
+  --text-3xl:  32px;
+  --text-4xl:  40px;
 
-  --text-xs: 0.8125rem;  /* 13px  dense table meta */
-  --text-sm: 0.875rem;   /* 14px  table body, labels */
-  --text-base: 0.9375rem;/* 15px  UI default */
-  --text-md: 1rem;       /* 16px  form controls */
-  --text-lg: 1.25rem;    /* 20px */
-  --text-xl: 1.75rem;    /* 28px */
-  --text-2xl: 2.25rem;   /* 36px */
-  --text-3xl: 2.75rem;   /* 44px  login display */
+  --lh-tight:  1.25;
+  --lh-normal: 1.5;
 
-  --leading-tight: 1.2;
+  /* Icon sizes — referenced from TSX, listed here so the scale is one place */
+  --icon-sm: 18px;
+  --icon-md: 22px;
+  --icon-lg: 26px;
+}
+
+/* --- Shell metrics -------------------------------------------------------- */
+
+:root {
+  --shell-rail: 296px;
+  --shell-rail-collapsed: 72px;
+  --shell-topbar: 64px;
+  --shell-mark: 84px;
+}
+/* --- Fonts ---------------------------------------------------------------- */
+
+:root {
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+               Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Cascadia Mono', Consolas,
+               'Liberation Mono', monospace;
+}
+
+/* --- Line height ---------------------------------------------------------- */
+
+:root {
+  --leading-tight: 1.25;
   --leading-normal: 1.5;
+  --leading-loose: 1.65;
+}
 
-  /* Space — 4px base ------------------------------------------------------ */
+/* --- Spacing -------------------------------------------------------------- */
+
+:root {
   --s1: 4px;
   --s2: 8px;
   --s3: 12px;
@@ -37,126 +151,18 @@
   --s5: 24px;
   --s6: 32px;
   --s7: 48px;
-  --s8: 64px;
+}
 
-  /* Radius — restrained. Nothing floats, so nothing needs to look soft. */
-  --r-sm: 2px;
-  --r-md: 4px;
-  --r-lg: 6px;
+/* --- Motion --------------------------------------------------------------- */
 
-  /* Motion */
-  --ease: cubic-bezier(0.2, 0, 0, 1);
+:root {
   --dur-fast: 120ms;
-  --dur-med: 200ms;
-
-  --z-modal: 100;
-  --z-toast: 200;
+  --dur-base: 200ms;
+  --ease: cubic-bezier(0.2, 0, 0.2, 1);
 }
 
-/* --- Light ----------------------------------------------------------------
-   Bone paper, graphite ink. Warm enough to read for hours without the
-   blue-white glare of a default #FFFFFF panel.
-   ------------------------------------------------------------------------- */
+/* --- Focus ---------------------------------------------------------------- */
+
 :root,
-[data-theme='light'] {
-  --bg: #f2f1ed;
-  --bg-raised: #fbfaf8;
-  --bg-sunken: #e8e7e2;
-  --bg-inset: #ddddd7;
-
-  --ink: #1b1d1f;
-  --ink-strong: #0d0e10;
-  --ink-muted: #5c6066;
-  --ink-faint: #8b9099;
-
-  --rule: #d2d1cb;
-  --rule-strong: #b6b5ae;
-
-  --accent: #1a5fb4;
-  --accent-hover: #174f96;
-  --accent-ink: #ffffff;
-  --accent-soft: #e3ecf8;
-
-  /* Aviation language — meaning only */
-  --engaged: #1a7f45;
-  --engaged-soft: #e0f0e6;
-  --caution: #a66a00;
-  --caution-soft: #fbeeda;
-  --warning: #b3261e;
-  --warning-soft: #fae3e1;
-  --reference: #0f6f84;
-  --reference-soft: #ddf0f4;
-  --selected: #9c27a0;
-  --selected-soft: #f6e4f7;
-
-  /* Computation status — neutral, no conformance meaning */
-  --st-computed: #3f4448;
-  --st-computed-soft: #e4e4df;
-  --st-pending: #5c6066;
-  --st-pending-soft: #e8e7e2;
-  --st-incomplete: #a66a00;
-  --st-incomplete-soft: #fbeeda;
-  --st-failed: #b3261e;
-  --st-failed-soft: #fae3e1;
-
-  /* Data provenance */
-  --declared: #a66a00;      /* user-typed date, unverified */
-  --verified: #3f4448;      /* derived from data */
-  --tier-decimated: #8b9099;
-  --tier-native: #1b1d1f;
-
-  --focus: #1a5fb4;
-  --shadow-modal: 0 8px 28px rgba(20, 22, 24, 0.18);
-}
-
-/* --- Dark -----------------------------------------------------------------
-   Ink ground with a faint blue cast, not a tinted near-black. Panels are
-   separated by rules and a half-step of lightness, not by shadow.
-   ------------------------------------------------------------------------- */
-[data-theme='dark'] {
-  --bg: #0e1418;
-  --bg-raised: #151d22;
-  --bg-sunken: #0a0f12;
-  --bg-inset: #1d262c;
-
-  --ink: #dfe4e7;
-  --ink-strong: #f2f5f6;
-  --ink-muted: #949da3;
-  --ink-faint: #6b757c;
-
-  --rule: #26323a;
-  --rule-strong: #38474f;
-
-  --accent: #4a90e2;
-  --accent-hover: #67a4ea;
-  --accent-ink: #06202f;
-  --accent-soft: #15293a;
-
-  --engaged: #3ddc84;
-  --engaged-soft: #102d1d;
-  --caution: #ffb020;
-  --caution-soft: #33260a;
-  --warning: #ff5a4e;
-  --warning-soft: #341614;
-  --reference: #38d6f0;
-  --reference-soft: #0c2b33;
-  --selected: #e072f0;
-  --selected-soft: #2c1331;
-
-  --st-computed: #b4bcc1;
-  --st-computed-soft: #1d262c;
-  --st-pending: #949da3;
-  --st-pending-soft: #161e23;
-  --st-incomplete: #ffb020;
-  --st-incomplete-soft: #33260a;
-  --st-failed: #ff5a4e;
-  --st-failed-soft: #341614;
-
-  --declared: #ffb020;
-  --verified: #b4bcc1;
-  --tier-decimated: #6b757c;
-  --tier-native: #dfe4e7;
-
-  --focus: #67a4ea;
-  --shadow-modal: 0 8px 28px rgba(0, 0, 0, 0.55);
-}
+[data-theme='light'] { --focus: #1677ff; }
+[data-theme='dark']  { --focus: #3295ff; }

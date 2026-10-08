@@ -1,0 +1,121 @@
+.config-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s5);
+}
+
+.data-table-wrap {
+  background: var(--bg-raised);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: var(--text-md); /* Slightly larger text as requested */
+}
+
+.data-table th,
+.data-table td {
+  padding: var(--s3) var(--s4);
+  border-bottom: 1px solid var(--rule);
+}
+
+.data-table th {
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--ink-strong);
+  background-color: var(--nav-bg-hover); /* Different shade for header */
+}
+
+/* Zebra striping for rows */
+.data-table tbody tr:nth-child(even) {
+  background-color: var(--bg);
+}
+.data-table tbody tr:nth-child(odd) {
+  background-color: var(--bg-raised);
+}
+
+.data-table tr:last-child td {
+  border-bottom: none;
+}
+
+.data-table tbody tr:hover {
+  background-color: var(--nav-bg-hover);
+}
+
+.config-actions {
+  display: flex;
+  gap: var(--s3);
+  margin-bottom: var(--s2);
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s2);
+  height: 38px;
+  padding: 0 var(--s4);
+  font-size: var(--text-md);
+  font-weight: 500;
+  color: var(--ink);
+  background: var(--bg);
+  border: 1px solid var(--rule-strong);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.btn-secondary:hover {
+  background: var(--nav-bg-hover);
+}
+
+.btn-danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 34px;
+  padding: 0 var(--s3);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: #dc2626; /* red */
+  background: transparent;
+  border: 1px solid #fca5a5;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.btn-danger:hover {
+  background: #fef2f2;
+}
+[data-theme="dark"] .btn-danger:hover { background: rgba(220, 38, 38, 0.1); border-color: #dc2626; }
+
+.btn-primary-sm {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s2);
+  height: 34px;
+  padding: 0 var(--s3);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--accent-ink);
+  background: var(--accent);
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.btn-primary-sm:hover {
+  filter: brightness(1.1);
+}
+
+.mass-input {
+  width: 120px;
+  padding: var(--s2);
+  border: 1px solid var(--rule-strong);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--ink);
+}

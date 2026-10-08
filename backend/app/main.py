@@ -6,14 +6,20 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import auth as auth_api
+from app.api import aircraft as aircraft_api
 from app.config import get_settings
 from app.db.pool import close_pool, init_pool
 
 
+import asyncio
+from app.services.worker import ingestion_worker
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     init_pool()
+    worker_task = asyncio.create_task(ingestion_worker())
     yield
+    worker_task.cancel()
     close_pool()
 
 
@@ -37,7 +43,11 @@ app.add_middleware(
 )
 
 app.include_router(auth_api.router)
-
+app.include_router(aircraft_api.router)
+from app.api import flight as flight_api
+app.include_router(flight_api.router)
+from app.api import ingestion as ingestion_api
+app.include_router(ingestion_api.router)
 
 @app.get("/health", tags=["meta"])
 async def health() -> dict[str, str]:
