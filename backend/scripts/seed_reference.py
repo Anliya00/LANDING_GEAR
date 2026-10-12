@@ -64,14 +64,26 @@ def main() -> int:
                 cur, "events", "event_id", "events_seq", len(missing_events)
             )
             for new_id, key in zip(event_ids, missing_events):
-                reference_repo.upsert_event(conn, new_id, key)
+                try:
+                    reference_repo.upsert_event(conn, new_id, key)
+                except Exception as exc:
+                    raise RuntimeError(
+                        f"EVENTS insert failed for {key} (event_id={new_id}, "
+                        f"source={key.source_file}): {exc}"
+                    ) from exc
 
             param_ids = results_repo.allocate(
                 cur, "parameters", "param_id", "parameters_seq", len(missing_params)
             )
             for new_id, name in zip(param_ids, missing_params):
                 unit, description = param_definitions[name]
-                reference_repo.upsert_param(conn, new_id, name, unit, description)
+                try:
+                    reference_repo.upsert_param(conn, new_id, name, unit, description)
+                except Exception as exc:
+                    raise RuntimeError(
+                        f"PARAMETERS insert failed for {name!r} (param_id={new_id}, "
+                        f"unit={unit!r} -> {reference_repo.canonical_unit(unit)!r}): {exc}"
+                    ) from exc
 
         print(
             f"\ninserted {len(missing_events)} event(s) "

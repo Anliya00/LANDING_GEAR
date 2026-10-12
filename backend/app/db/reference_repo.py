@@ -86,85 +86,47 @@ def check_event_sources(conn: oracledb.Connection, event_keys: set[EventKey]) ->
 def upsert_event(
     conn: oracledb.Connection, event_id: int | None, key: EventKey
 ) -> None:
-    """Idempotent insert of one EVENTS row. Used by scripts/seed_reference.py."""
+    """Idempotent insert of one EVENTS row.
+
+    Deliberately a read then a write rather than a MERGE. Oracle infers bind
+    datatypes inside `USING (SELECT :bind ... FROM dual)` and can decide a bind
+    is VARCHAR2, which then fails comparing against the NUMBER column with
+    ORA-01722. Two statements are slower and entirely predictable; this runs by
+    hand a handful of times, so predictable wins.
+    """
     cur = conn.cursor()
     cur.execute(
         """
-        MERGE INTO events e
-        USING (SELECT :col AS event_column_name, :tr AS transition FROM dual) src
-           ON (LOWER(e.event_column_name) = src.event_column_name
-               AND e.transition = src.transition)
-        WHEN MATCHED THEN
-          UPDATE SET e.event_name = :name, e.source_file = :src_file
-        WHEN NOT MATCHED THEN
-          INSERT (event_id, event_name, event_column_name, transition, source_file)
-          VALUES (:eid, :name, :col_raw, :tr, :src_file)
+        SELECT event_id FROM events
+         WHERE LOWER(event_column_name) = :col
+           AND transition = :tr
         """,
         col=key.column,
-        col_raw=key.column.upper(),
-        tr=key.transition,
-        name=key.event_name,
-        src_file=key.source_file,
-        eid=event_id,
+        tr=int(key.transition),
     )
+    row = cur.fetchone()
 
+    if row is not None:
+        cur.execute(
+            "UPDATE events SET event_name = :name, source_file = :sf WHERE event_id = :i",
+            name=key.event_name,
+            sf=key.source_file,
+            i=int(row[0]),
+        )
+        return
 
-#: The families name units as the source files do; UNITS was populated with the
-#: project's own spellings. These map one to the other so seeding reuses the
-#: existing rows instead of creating near-duplicates beside them.
-#:
-#: 'milirad' is the spelling in the Parquet column metadata (one L). UNITS has
-#: the correct 'millirad'.
-UNIT_ALIASES: dict[str, str] = {
-    "s": "sec",
-    "milirad": "millirad",
-    # "lsw": "m/s",   <- enable once the sink-rate unit is confirmed. UNITS
-    #                    already holds 'm/s' and nothing else uses it, which
-    #                    suggests it was added for exactly this.
-}
-
-
-def canonical_unit(unit_name: str) -> str:
-    """The UNITS spelling for a unit a family declared."""
-    key = (unit_name or "").strip().lower()
-    return UNIT_ALIASES.get(key, key)
-
-
-def load_unit_ids(conn: oracledb.Connection) -> dict[str, int]:
-    """UNIT_NAME (lower-cased) -> UNIT_ID."""
-    cur = conn.cursor()
-    cur.execute("SELECT unit_id, unit_name FROM units")
-    return {str(name).strip().lower(): int(uid) for uid, name in cur}
-
-
-def get_or_create_unit(conn: oracledb.Connection, unit_name: str) -> int | None:
-    """Resolve a unit name to its UNIT_ID, inserting the row if it is new.
-
-    PARAMETERS carries UNIT_ID, not a unit string, so the unit each family
-    declares has to be looked up here. Units are a tiny closed set ('s', 'kg',
-    'm', 'g', 'knots'), so creating the missing ones on first seed is simpler
-    than asking someone to pre-populate them by hand.
-    """
-    if not unit_name:
-        return None
-
-    wanted = canonical_unit(unit_name)
-    known = load_unit_ids(conn)
-    existing = known.get(wanted)
-    if existing is not None:
-        return existing
-
-    # Local import: results_repo owns the sequence-or-MAX(id)+1 allocation.
-    from app.db.results_repo import allocate
-
-    cur = conn.cursor()
-    new_id = allocate(cur, "units", "unit_id", "units_seq", 1)[0]
     cur.execute(
-        "INSERT INTO units (unit_id, unit_name) VALUES (:i, :n)",
-        i=new_id, n=wanted,
+        """
+        INSERT INTO events (event_id, event_name, event_column_name, transition, source_file)
+        VALUES (:i, :name, :col, :tr, :sf)
+        """,
+        i=int(event_id),
+        name=key.event_name,
+        col=key.column.upper(),
+        tr=int(key.transition),
+        sf=key.source_file,
     )
-    log.info("created UNITS row %s = %r", new_id, wanted)
-    return new_id
+    log.info("created EVENTS row %s = %s", event_id, key)
 
 
 def upsert_param(
@@ -178,23 +140,33 @@ def upsert_param(
 
     `unit` is the unit's NAME as the family declares it; it is resolved to a
     UNIT_ID here, creating the UNITS row if that unit has not been seen before.
+
+    A read then a write, for the same reason as `upsert_event`.
     """
     unit_id = get_or_create_unit(conn, unit)
     cur = conn.cursor()
     cur.execute(
-        """
-        MERGE INTO parameters p
-        USING (SELECT :name_lc AS param_name FROM dual) src
-           ON (LOWER(p.param_name) = src.param_name)
-        WHEN MATCHED THEN
-          UPDATE SET p.unit_id = :unit_id, p.description = :descr
-        WHEN NOT MATCHED THEN
-          INSERT (param_id, param_name, description, unit_id)
-          VALUES (:pid, :name, :descr, :unit_id)
-        """,
-        name=name,
-        name_lc=name.lower(),
-        unit_id=unit_id,
-        descr=description,
-        pid=param_id,
+        "SELECT param_id FROM parameters WHERE LOWER(param_name) = :n", n=name.lower()
     )
+    row = cur.fetchone()
+
+    if row is not None:
+        cur.execute(
+            "UPDATE parameters SET unit_id = :u, description = :d WHERE param_id = :i",
+            u=unit_id,
+            d=description,
+            i=int(row[0]),
+        )
+        return
+
+    cur.execute(
+        """
+        INSERT INTO parameters (param_id, param_name, description, unit_id)
+        VALUES (:i, :n, :d, :u)
+        """,
+        i=int(param_id),
+        n=name,
+        d=description,
+        u=unit_id,
+    )
+    log.info("created PARAMETERS row %s = %s", param_id, name)

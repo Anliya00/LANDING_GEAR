@@ -87,7 +87,7 @@ def against_database(flight_id: int, dry_run: bool) -> int:
             if flight is None:
                 print(f"ABORT: no FLIGHTS row for flight_id={flight_id}", file=sys.stderr)
                 return 2
-            print(f"flight_id={flight_id}  aircraft={flight.get('aircraft_no')}  "
+            print(f"flight_id={flight_id}  aircraft={flight.get('aircraft_number')}  "
                   f"date={flight.get('flight_date_time')}")
             print(f"derived={resolve_derived(flight)}")
 
