@@ -21,6 +21,22 @@ interface ScanResult {
   folders: FolderInfo[];
 }
 
+// The database stores UPLOAD COMPLETE, ANALYSIS PENDING, ANALYZING ... in capitals.
+// Turn each into the words the rest of this page already tests for. 'Analyzing'
+// is spelled 'Analysing' because that is the token used throughout below.
+function normaliseStatus(raw: string | null | undefined): string {
+  if (!raw) return 'Pending';
+  const words = raw.trim().toLowerCase().replace(/\s+/g, ' ');
+  const titled = words.replace(/\b\w/g, c => c.toUpperCase());
+  return titled === 'Analyzing' ? 'Analysing' : titled;
+}
+
+// Waiting for, or being worked on by, a background worker.
+const isBusy = (status: string) => {
+  const s = status.toLowerCase();
+  return s === 'uploading' || s === 'analysing' || s === 'analysis pending';
+};
+
 export default function IngestionPage() {
   const { can } = useSession();
   const isOperator = can('ingest');
@@ -48,7 +64,7 @@ export default function IngestionPage() {
   useEffect(() => {
     const hasActive = folders.some(f => {
       const s = f.status.toLowerCase();
-      return s === 'uploading' || s === 'analysing' || s === 'pending';
+      return isBusy(s) || s === 'pending';
     });
     if (!hasActive && localUploading.size === 0) return;
 
@@ -62,7 +78,7 @@ export default function IngestionPage() {
     if (!silent) setLoading(true);
     try {
       const res = await api.get<ScanResult>('/ingestion/folders');
-      setFolders(res.folders);
+      setFolders(res.folders.map(f => ({ ...f, status: normaliseStatus(f.status) })));
       
       // Clear localUploading if the server officially reports it's Uploading or beyond
       setLocalUploading(prev => {
@@ -130,7 +146,7 @@ export default function IngestionPage() {
     } else if (s.includes('failed')) {
       Icon = AlertTriangle;
       className = 'badge-failed';
-    } else if (s === 'uploading' || s === 'analysing') {
+    } else if (isBusy(s)) {
       Icon = RefreshCw;
       className = 'badge-processing';
     }
@@ -154,8 +170,7 @@ export default function IngestionPage() {
   const stats = {
     new: displayFolders.filter(f => f.status.toLowerCase() === 'pending').length,
     processing: displayFolders.filter(f => {
-      const s = f.status.toLowerCase();
-      return s === 'uploading' || s === 'analysing';
+      return isBusy(f.status);
     }).length,
     failed: displayFolders.filter(f => f.status.toLowerCase().includes('failed')).length,
     completed: displayFolders.filter(f => f.status.toLowerCase().includes('complete')).length,
@@ -280,6 +295,7 @@ export default function IngestionPage() {
           <option value="Uploading">Uploading</option>
           <option value="Upload Complete">Upload Complete</option>
           <option value="Upload Failed">Upload Failed</option>
+          <option value="Analysis Pending">Analysis Pending</option>
           <option value="Analysing">Analysing</option>
           <option value="Analysis Complete">Analysis Complete</option>
           <option value="Analysis Failed">Analysis Failed</option>
@@ -340,10 +356,7 @@ export default function IngestionPage() {
                     <div style={{display: 'flex', gap: '8px'}}>
                       {activeTab !== 'history' && (() => {
                         const isThisRowPending = f.status.toLowerCase() === 'pending';
-                        const isAnythingProcessing = displayFolders.some(x => 
-                          x.status.toLowerCase() === 'uploading' || 
-                          x.status.toLowerCase() === 'analysing'
-                        );
+                        const isAnythingProcessing = displayFolders.some(x => isBusy(x.status));
                         const isGloballyLocked = isIngesting || isAnythingProcessing;
                         
                         return (
