@@ -16,6 +16,41 @@ from app.compute.models import EventKey
 log = logging.getLogger("db.reference")
 
 
+_NUMERIC = ("NUMBER", "FLOAT", "INTEGER", "BINARY_FLOAT", "BINARY_DOUBLE")
+
+
+def column_types(conn: oracledb.Connection, table: str) -> dict[str, str]:
+    """Lower-cased column name -> Oracle data type, for one table."""
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT LOWER(column_name), data_type FROM user_tab_columns "
+        "WHERE table_name = UPPER(:t)",
+        t=table,
+    )
+    return {name: dtype for name, dtype in cur}
+
+
+def _is_numeric(data_type: str | None) -> bool:
+    return bool(data_type) and data_type.upper().startswith(_NUMERIC)
+
+
+def _source_file_value(source_file: str, numeric: bool) -> object:
+    """EVENTS.SOURCE_FILE as the column wants it.
+
+    The families name the file 'Data-1'. A schema may store that string, or
+    store just the 1. Inserting the string into a NUMBER column is ORA-01722,
+    which is a confusing error to meet for the first time, so the type decides.
+    """
+    if not numeric:
+        return source_file
+    digits = "".join(c for c in str(source_file) if c.isdigit())
+    if not digits:
+        raise ValueError(
+            f"EVENTS.SOURCE_FILE is numeric but {source_file!r} has no number in it"
+        )
+    return int(digits)
+
+
 def load_event_ids(conn: oracledb.Connection) -> dict[tuple[str, int], int]:
     """(column, transition) -> EVENT_ID.
 
@@ -154,12 +189,21 @@ def upsert_event(
 ) -> None:
     """Idempotent insert of one EVENTS row.
 
-    Deliberately a read then a write rather than a MERGE. Oracle infers bind
+    Deliberately a read then a write rather than a MERGE: Oracle infers bind
     datatypes inside `USING (SELECT :bind ... FROM dual)` and can decide a bind
-    is VARCHAR2, which then fails comparing against the NUMBER column with
-    ORA-01722. Two statements are slower and entirely predictable; this runs by
-    hand a handful of times, so predictable wins.
+    is VARCHAR2, which then fails against a NUMBER column with ORA-01722.
+
+    TRANSITION and SOURCE_FILE are bound to match the column types actually
+    declared, because both are stored differently in different schemas — a
+    transition as 1/0 or as '1'/'0', a source file as 'Data-1' or as 1.
     """
+    types = column_types(conn, "events")
+    transition_numeric = _is_numeric(types.get("transition"))
+    source_numeric = _is_numeric(types.get("source_file"))
+
+    transition = int(key.transition) if transition_numeric else str(key.transition)
+    source_file = _source_file_value(key.source_file, source_numeric)
+
     cur = conn.cursor()
     cur.execute(
         """
@@ -168,7 +212,7 @@ def upsert_event(
            AND transition = :tr
         """,
         col=key.column,
-        tr=int(key.transition),
+        tr=transition,
     )
     row = cur.fetchone()
 
@@ -176,7 +220,7 @@ def upsert_event(
         cur.execute(
             "UPDATE events SET event_name = :name, source_file = :sf WHERE event_id = :i",
             name=key.event_name,
-            sf=key.source_file,
+            sf=source_file,
             i=int(row[0]),
         )
         return
@@ -189,10 +233,10 @@ def upsert_event(
         i=int(event_id),
         name=key.event_name,
         col=key.column.upper(),
-        tr=int(key.transition),
-        sf=key.source_file,
+        tr=transition,
+        sf=source_file,
     )
-    log.info("created EVENTS row %s = %s", event_id, key)
+    log.info("created EVENTS row %s = %s (source %r)", event_id, key, source_file)
 
 
 def upsert_param(

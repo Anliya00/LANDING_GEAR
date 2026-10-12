@@ -121,6 +121,20 @@ def check_schema(conn) -> int:
             )
             problems += 1
 
+    # The reference tables are small and their column types vary between
+    # schemas. Printing them turns "ORA-01722 somewhere" into one glance.
+    print("\nREFERENCE TABLE SHAPES")
+    for table in ("events", "parameters", "units"):
+        if table not in present:
+            continue
+        types = _columns(cur, table)
+        print(f"  {table}: " + ", ".join(f"{c} {t}" for c, t in types.items()))
+        cur.execute(f"SELECT * FROM {table} WHERE ROWNUM <= 2")
+        names = [d[0].lower() for d in cur.description]
+        for row in cur:
+            pairs = ", ".join(f"{n}={v!r}" for n, v in zip(names, row))
+            print(f"      {pairs}")
+
     print("\nSEQUENCES")
     have = _sequences(cur)
     for name, (table, id_column) in SEQUENCES.items():
