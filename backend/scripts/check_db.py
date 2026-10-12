@@ -29,7 +29,8 @@ WARN = "  warn "
 # table -> columns the code reads or writes
 EXPECTED: dict[str, list[str]] = {
     "events": ["event_id", "event_name", "event_column_name", "transition", "source_file"],
-    "parameters": ["param_id", "param_name", "description", "unit"],
+    "parameters": ["param_id", "param_name", "description", "unit_id"],
+    "units": ["unit_id", "unit_name"],
     "event_timestamps": ["event_timestamp_id", "event_id", "flight_id", "date_time", "occur_seq"],
     "results": [
         "result_id", "flight_id", "param_id", "param_val", "occur_seq",
@@ -40,7 +41,8 @@ EXPECTED: dict[str, list[str]] = {
     "flight_status": ["flight_status_id", "flight_id", "status", "remarks", "date_time"],
 }
 
-SEQUENCES = ["events_seq", "parameters_seq", "event_timestamps_seq", "results_seq"]
+SEQUENCES = ["events_seq", "parameters_seq", "units_seq",
+             "event_timestamps_seq", "results_seq"]
 
 
 def _tables(cur) -> set[str]:
@@ -154,6 +156,17 @@ def check_schema(conn) -> int:
             problems += 1
         else:
             print(f"{OK}all {total_e} event(s) and {total_p} parameter(s) present")
+        try:
+            units = reference_repo.load_unit_ids(conn)
+            print(f"{OK}UNITS holds {len(units)} row(s): "
+                  f"{', '.join(sorted(units)) if units else '(none yet)'}")
+            needed = {u.lower() for u, _ in registry.all_param_definitions(None).values()}
+            absent = sorted(needed - set(units))
+            if absent:
+                print(f"{WARN}seed_reference will create UNITS row(s) for: {', '.join(absent)}")
+        except Exception as exc:
+            print(f"{MISS}cannot read UNITS: {exc}")
+            problems += 1
     else:
         print(f"{MISS}events / parameters tables missing, cannot check")
 

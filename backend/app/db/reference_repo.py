@@ -109,6 +109,42 @@ def upsert_event(
     )
 
 
+def load_unit_ids(conn: oracledb.Connection) -> dict[str, int]:
+    """UNIT_NAME (lower-cased) -> UNIT_ID."""
+    cur = conn.cursor()
+    cur.execute("SELECT unit_id, unit_name FROM units")
+    return {str(name).strip().lower(): int(uid) for uid, name in cur}
+
+
+def get_or_create_unit(conn: oracledb.Connection, unit_name: str) -> int | None:
+    """Resolve a unit name to its UNIT_ID, inserting the row if it is new.
+
+    PARAMETERS carries UNIT_ID, not a unit string, so the unit each family
+    declares has to be looked up here. Units are a tiny closed set ('s', 'kg',
+    'm', 'g', 'knots'), so creating the missing ones on first seed is simpler
+    than asking someone to pre-populate them by hand.
+    """
+    if not unit_name:
+        return None
+
+    known = load_unit_ids(conn)
+    existing = known.get(unit_name.strip().lower())
+    if existing is not None:
+        return existing
+
+    # Local import: results_repo owns the sequence-or-MAX(id)+1 allocation.
+    from app.db.results_repo import allocate
+
+    cur = conn.cursor()
+    new_id = allocate(cur, "units", "unit_id", "units_seq", 1)[0]
+    cur.execute(
+        "INSERT INTO units (unit_id, unit_name) VALUES (:i, :n)",
+        i=new_id, n=unit_name.strip(),
+    )
+    log.info("created UNITS row %s = %r", new_id, unit_name)
+    return new_id
+
+
 def upsert_param(
     conn: oracledb.Connection,
     param_id: int | None,
@@ -116,6 +152,12 @@ def upsert_param(
     unit: str,
     description: str,
 ) -> None:
+    """Idempotent insert of one PARAMETERS row.
+
+    `unit` is the unit's NAME as the family declares it; it is resolved to a
+    UNIT_ID here, creating the UNITS row if that unit has not been seen before.
+    """
+    unit_id = get_or_create_unit(conn, unit)
     cur = conn.cursor()
     cur.execute(
         """
@@ -123,14 +165,14 @@ def upsert_param(
         USING (SELECT :name_lc AS param_name FROM dual) src
            ON (LOWER(p.param_name) = src.param_name)
         WHEN MATCHED THEN
-          UPDATE SET p.unit = :unit, p.description = :descr
+          UPDATE SET p.unit_id = :unit_id, p.description = :descr
         WHEN NOT MATCHED THEN
-          INSERT (param_id, param_name, description, unit)
-          VALUES (:pid, :name, :descr, :unit)
+          INSERT (param_id, param_name, description, unit_id)
+          VALUES (:pid, :name, :descr, :unit_id)
         """,
         name=name,
         name_lc=name.lower(),
-        unit=unit,
+        unit_id=unit_id,
         descr=description,
         pid=param_id,
     )
