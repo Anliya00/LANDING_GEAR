@@ -139,25 +139,24 @@ def run_compute(
     event_ids = reference_repo.load_event_ids(conn)
     param_ids = reference_repo.load_param_ids(conn)
 
-    done: list[str] = []
+    # One transaction for the whole run: families share events (retraction and
+    # extension both read the door and lever signals), so they cannot be
+    # replaced one at a time without one family clearing another's rows.
+    try:
+        results_repo.persist_all(
+            conn, flight_id, base_date, outputs, event_ids, param_ids,
+            link_mode=settings.results_link_mode,
+        )
+    except Exception:
+        conn.rollback()
+        log.exception("flight_id=%s failed to persist; nothing was written", flight_id)
+        raise
+    if commit:
+        conn.commit()
+    done = [o.family for o in outputs]
     for output in outputs:
-        try:
-            results_repo.persist(
-                conn, flight_id, base_date, output, event_ids, param_ids,
-                link_mode=settings.results_link_mode,
-            )
-        except Exception:
-            # Roll back only this family's statements. Families that already
-            # committed keep their results; with commit=False a failure discards
-            # the whole run, which is right for a dry run.
-            conn.rollback()
-            log.exception("flight_id=%s family=%s failed to persist", flight_id, output.family)
-        else:
-            if commit:
-                conn.commit()
-            done.append(output.family)
-            for note in output.warnings:
-                log.info("flight_id=%s %s: %s", flight_id, output.family, note)
+        for note in output.warnings:
+            log.info("flight_id=%s %s: %s", flight_id, output.family, note)
 
     if not done:
         raise FlightNotComputable(f"nothing persisted for flight_id={flight_id}")

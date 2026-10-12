@@ -272,25 +272,84 @@ def persist(
     param_ids: dict[str, int],
     *,
     link_mode: LinkMode = "id",
+    delete: bool = True,
+    written: dict[tuple[EventKey, float], list] | None = None,
 ) -> tuple[int, int]:
-    """Replace this family's rows for this flight. Does not commit.
+    """Write one family's rows for this flight. Does not commit.
 
-    Delete first, then insert, so a re-run of the same family produces the same
-    state as a first run. That is what lets the worker requeue a flight a
-    crashed worker left half-done.
+    Some events are shared between families (retraction and extension both
+    watch the door and lever signals). `persist_all` therefore deletes the whole
+    run's footprint ONCE, up front, and passes `written` so an occurrence that an
+    earlier family already stored is reused rather than inserted twice. If both
+    families selected the same occurrence, the first one's OCCUR_SEQ is kept;
+    RESULTS carry the datetimes themselves, so no value depends on that column.
 
-    Returns (occurrence rows, result rows).
+    Called alone (delete=True, written=None) it replaces just this family, as
+    before.
+
+    Returns (occurrence rows written, result rows).
     """
+    if delete:
+        delete_family(
+            conn,
+            flight_id,
+            event_ids=[event_ids[k.lookup] for k in output.event_keys if k.lookup in event_ids],
+            param_ids=[param_ids[p.lower()] for p in output.param_names if p.lower() in param_ids],
+        )
+    if written is None:
+        written = {}
+
+    fresh = [o for o in output.occurrences if o.ident not in written]
+    new_ids = insert_occurrences(conn, flight_id, base_date, fresh, event_ids)
+    for o in fresh:
+        written[o.ident] = [new_ids[o.ident], o.occurrence_seq]
+
+    # Occurrence already stored by an earlier family: fill its OCCUR_SEQ only if
+    # that family left it NULL (it detected the edge but did not select it).
+    cur = conn.cursor()
+    for o in output.occurrences:
+        entry = written[o.ident]
+        if o.occurrence_seq is not None and entry[1] is None:
+            cur.execute(
+                f"UPDATE {ET_TABLE} SET occur_seq = :s WHERE event_timestamp_id = :i",
+                s=o.occurrence_seq, i=int(entry[0]),
+            )
+            entry[1] = o.occurrence_seq
+
+    timestamp_ids = {ident: entry[0] for ident, entry in written.items()}
+    count = insert_results(
+        conn, flight_id, base_date, output, param_ids, timestamp_ids, link_mode=link_mode
+    )
+    return (len(fresh), count)
+
+
+def persist_all(
+    conn: oracledb.Connection,
+    flight_id: int,
+    base_date: dt.date,
+    outputs: list[FamilyOutput],
+    event_ids: dict[tuple[str, int], int],
+    param_ids: dict[str, int],
+    *,
+    link_mode: LinkMode = "id",
+) -> None:
+    """Replace every family's rows for this flight in ONE transaction.
+
+    One delete over the union of all footprints, then every family's inserts.
+    All-or-nothing: a database error leaves the flight exactly as it was.
+    Does not commit.
+    """
+    all_events = {k for o in outputs for k in o.event_keys}
+    all_params = {p for o in outputs for p in o.param_names}
     delete_family(
         conn,
         flight_id,
-        event_ids=[event_ids[k.lookup] for k in output.event_keys if k.lookup in event_ids],
-        param_ids=[param_ids[p.lower()] for p in output.param_names if p.lower() in param_ids],
+        event_ids=[event_ids[k.lookup] for k in all_events if k.lookup in event_ids],
+        param_ids=[param_ids[p.lower()] for p in all_params if p.lower() in param_ids],
     )
-    timestamp_ids = insert_occurrences(
-        conn, flight_id, base_date, output.occurrences, event_ids
-    )
-    written = insert_results(
-        conn, flight_id, base_date, output, param_ids, timestamp_ids, link_mode=link_mode
-    )
-    return (len(output.occurrences), written)
+    written: dict = {}
+    for output in outputs:
+        persist(
+            conn, flight_id, base_date, output, event_ids, param_ids,
+            link_mode=link_mode, delete=False, written=written,
+        )
