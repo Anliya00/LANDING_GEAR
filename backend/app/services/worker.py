@@ -81,7 +81,7 @@ async def ingestion_worker():
                             
                         # Success
                         cur.execute(
-                            "UPDATE FLIGHT_STATUS SET STATUS = 'UPLOAD COMPLETE', DATE_TIME = SYSTIMESTAMP WHERE FLIGHT_STATUS_ID = :1",
+                            "UPDATE FLIGHT_STATUS SET STATUS = 'ANALYSIS PENDING', DATE_TIME = SYSTIMESTAMP WHERE FLIGHT_STATUS_ID = :1",
                             [status_id]
                         )
                         cur.execute(
@@ -89,13 +89,13 @@ async def ingestion_worker():
                             [flight_id]
                         )
                         conn.commit()
-                        logger.info(f"Flight {flight_id} completed successfully (Upload Complete)")
+                        logger.info(f"Flight {flight_id} converted; queued for analysis (Analysis Pending)")
                         
                     except Exception as e:
                         logger.error(f"Flight {flight_id} failed: {e}")
                         cur.execute(
                             "UPDATE FLIGHT_STATUS SET STATUS = 'UPLOAD FAILED', REMARKS = :1, DATE_TIME = SYSTIMESTAMP WHERE FLIGHT_STATUS_ID = :2",
-                            [str(traceback.format_exc()), status_id]
+                            [f"{type(e).__name__}: {e}"[:50], status_id]  # REMARKS is VARCHAR2(50)
                         )
                         cur.execute(
                             "UPDATE FLIGHTS SET UPLOAD_END_TIME = SYSTIMESTAMP WHERE FLIGHT_ID = :1",
