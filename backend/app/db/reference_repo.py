@@ -83,6 +83,72 @@ def check_event_sources(conn: oracledb.Connection, event_keys: set[EventKey]) ->
     return notes
 
 
+# ---------------------------------------------------------------------------
+# units
+# ---------------------------------------------------------------------------
+
+#: The families name units as the source files do; UNITS was populated with the
+#: project's own spellings. These map one to the other so seeding reuses the
+#: existing rows instead of creating near-duplicates beside them.
+#:
+#: 'milirad' is the spelling in the Parquet column metadata (one L). UNITS has
+#: the correct 'millirad'.
+UNIT_ALIASES: dict[str, str] = {
+    "s": "sec",
+    "milirad": "millirad",
+    # "lsw": "m/s",   <- enable once the sink-rate unit is confirmed. UNITS
+    #                    already holds 'm/s' and nothing else uses it, which
+    #                    suggests it was added for exactly this.
+}
+
+
+def canonical_unit(unit_name: str) -> str:
+    """The UNITS spelling for a unit a family declared."""
+    key = (unit_name or "").strip().lower()
+    return UNIT_ALIASES.get(key, key)
+
+
+def load_unit_ids(conn: oracledb.Connection) -> dict[str, int]:
+    """UNIT_NAME (lower-cased) -> UNIT_ID."""
+    cur = conn.cursor()
+    cur.execute("SELECT unit_id, unit_name FROM units")
+    return {str(name).strip().lower(): int(uid) for uid, name in cur}
+
+
+def get_or_create_unit(conn: oracledb.Connection, unit_name: str) -> int | None:
+    """Resolve a unit name to its UNIT_ID, inserting the row if it is new.
+
+    PARAMETERS carries UNIT_ID, not a unit string, so the unit each family
+    declares has to be looked up here. Units are a tiny closed set, so creating
+    the missing ones on first seed is simpler than asking someone to
+    pre-populate them by hand.
+    """
+    if not unit_name:
+        return None
+
+    wanted = canonical_unit(unit_name)
+    known = load_unit_ids(conn)
+    existing = known.get(wanted)
+    if existing is not None:
+        return existing
+
+    # Local import: results_repo owns the sequence-or-MAX(id)+1 allocation.
+    from app.db.results_repo import allocate
+
+    cur = conn.cursor()
+    new_id = allocate(cur, "units", "unit_id", "units_seq", 1)[0]
+    cur.execute(
+        "INSERT INTO units (unit_id, unit_name) VALUES (:i, :n)",
+        i=int(new_id), n=wanted,
+    )
+    log.info("created UNITS row %s = %r", new_id, wanted)
+    return int(new_id)
+
+
+# ---------------------------------------------------------------------------
+# writes
+# ---------------------------------------------------------------------------
+
 def upsert_event(
     conn: oracledb.Connection, event_id: int | None, key: EventKey
 ) -> None:
