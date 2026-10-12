@@ -160,7 +160,8 @@ def check_schema(conn) -> int:
             units = reference_repo.load_unit_ids(conn)
             print(f"{OK}UNITS holds {len(units)} row(s): "
                   f"{', '.join(sorted(units)) if units else '(none yet)'}")
-            needed = {u.lower() for u, _ in registry.all_param_definitions(None).values()}
+            needed = {reference_repo.canonical_unit(u)
+                      for u, _ in registry.all_param_definitions(None).values()}
             absent = sorted(needed - set(units))
             if absent:
                 print(f"{WARN}seed_reference will create UNITS row(s) for: {', '.join(absent)}")
