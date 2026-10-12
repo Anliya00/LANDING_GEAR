@@ -67,11 +67,23 @@ def load_event_ids(conn: oracledb.Connection) -> dict[tuple[str, int], int]:
     }
 
 
+def _source_digits(value: object) -> str:
+    """The file number inside a SOURCE_FILE value, however it is stored.
+
+    1, '1' and 'Data-1' all come back as '1'. A value with no digits comes back
+    lower-cased so two odd spellings can still be compared with each other.
+    """
+    text = "" if value is None else str(value).strip()
+    digits = "".join(c for c in text if c.isdigit())
+    return digits or text.lower()
+
+
 def load_event_sources(conn: oracledb.Connection) -> dict[tuple[str, int], str]:
+    """(column, transition) -> SOURCE_FILE as text; the column may be NUMBER or VARCHAR2."""
     cur = conn.cursor()
     cur.execute("SELECT event_column_name, transition, source_file FROM events")
     return {
-        (column.strip().lower(), int(transition)): (source or "").strip()
+        (str(column).strip().lower(), int(transition)): ("" if source is None else str(source).strip())
         for column, transition, source in cur
     }
 
@@ -111,7 +123,7 @@ def check_event_sources(conn: oracledb.Connection, event_keys: set[EventKey]) ->
     notes: list[str] = []
     for key in sorted(event_keys):
         declared = recorded.get(key.lookup)
-        if declared and declared.lower() != key.source_file.lower():
+        if declared and _source_digits(declared) != _source_digits(key.source_file):
             notes.append(
                 f"{key}: EVENTS says source {declared!r}, family says {key.source_file!r}"
             )
