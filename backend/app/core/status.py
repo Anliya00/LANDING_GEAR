@@ -44,7 +44,7 @@ READY_FOR_ANALYSIS = frozenset({UPLOAD_COMPLETE, ANALYSIS_COMPLETE, ANALYSIS_FAI
 #: A flight in this state must not be re-queued — a worker owns it.
 BUSY = frozenset({PENDING, UPLOADING, ANALYZING})
 
-REMARKS_MAX = 400
+REMARKS_MAX = 50  # FLIGHT_STATUS.REMARKS is VARCHAR2(50) in the live schema
 
 
 def label(status: str | None) -> str:

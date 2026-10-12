@@ -335,9 +335,12 @@ def check_flight(conn, flight_id: int) -> int:
 
     print("\nCONSISTENCY")
     # Complete rows must carry a value and both links; Incomplete rows must not.
+    # INITIAL_FUEL_LOADED is a single reading, not measured between two events,
+    # so it legitimately has no links.
+    no_links = {"INITIAL_FUEL_LOADED"}
     bad = [
         (n, s) for n, s, v, st, a, b in results
-        if (int(st) == 1 and (v is None or a is None or b is None))
+        if (int(st) == 1 and (v is None or (n.upper() not in no_links and (a is None or b is None))))
         or (int(st) == 0 and v is not None)
     ]
     if bad:
