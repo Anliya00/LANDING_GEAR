@@ -17,20 +17,62 @@
 -- ---------------------------------------------------------------------------
 
 
--- == SECTION 1 — sequences ==================================================
+-- == SECTION 1 — sequences (OPTIONAL) =======================================
 -- Without a sequence the code allocates ids with MAX(id)+1, which is correct
 -- but SINGLE WRITER ONLY: two workers would allocate the same block and collide
--- on the primary key. Fine today (one analysis worker); create these before
--- running a second. `check_db` reports which are absent.
+-- on the primary key.
 --
--- Skip any that already exist — CREATE SEQUENCE on an existing name raises
--- ORA-00955 and is harmless.
+-- EVENT_TIMESTAMPS_SEQ and RESULTS_SEQ already exist, and those are the two
+-- that see volume. EVENTS, PARAMETERS and UNITS are only written by
+-- `scripts/seed_reference`, which is run by hand and never concurrently, so
+-- MAX(id)+1 is genuinely fine for them. Create these only if you want the
+-- schema uniform.
+--
+-- DO NOT write `CREATE SEQUENCE events_seq START WITH 1`. All three tables
+-- already hold rows, so a sequence starting at 1 would hand out ids that exist
+-- and every insert would fail on the unique constraint. The block below starts
+-- each sequence above the current maximum.
 
-CREATE SEQUENCE events_seq           START WITH 1 INCREMENT BY 1 NOCACHE;
-CREATE SEQUENCE parameters_seq       START WITH 1 INCREMENT BY 1 NOCACHE;
-CREATE SEQUENCE units_seq            START WITH 1 INCREMENT BY 1 NOCACHE;
-CREATE SEQUENCE event_timestamps_seq START WITH 1 INCREMENT BY 1 CACHE 100;
-CREATE SEQUENCE results_seq          START WITH 1 INCREMENT BY 1 CACHE 100;
+DECLARE
+  v_next   NUMBER;
+  v_exists NUMBER;
+  TYPE t_spec IS RECORD (seq VARCHAR2(30), tab VARCHAR2(30), col VARCHAR2(30));
+  TYPE t_list IS TABLE OF t_spec;
+  v_specs  t_list := t_list(
+    t_spec('EVENTS_SEQ',     'EVENTS',     'EVENT_ID'),
+    t_spec('PARAMETERS_SEQ', 'PARAMETERS', 'PARAM_ID'),
+    t_spec('UNITS_SEQ',      'UNITS',      'UNIT_ID')
+  );
+BEGIN
+  FOR i IN 1 .. v_specs.COUNT LOOP
+    SELECT COUNT(*) INTO v_exists
+      FROM user_sequences WHERE sequence_name = v_specs(i).seq;
+
+    IF v_exists = 0 THEN
+      EXECUTE IMMEDIATE
+        'SELECT NVL(MAX(' || v_specs(i).col || '), 0) + 1 FROM ' || v_specs(i).tab
+        INTO v_next;
+
+      EXECUTE IMMEDIATE
+        'CREATE SEQUENCE ' || v_specs(i).seq ||
+        ' START WITH ' || v_next || ' INCREMENT BY 1 NOCACHE';
+
+      DBMS_OUTPUT.PUT_LINE(v_specs(i).seq || ' created, starting at ' || v_next);
+    ELSE
+      DBMS_OUTPUT.PUT_LINE(v_specs(i).seq || ' already exists, left alone');
+    END IF;
+  END LOOP;
+END;
+/
+
+-- The same trap applies to the two that already exist. If EVENT_TIMESTAMPS or
+-- RESULTS already hold rows from an earlier run, confirm their sequences are
+-- ahead of the data before relying on them:
+--
+--   SELECT last_number FROM user_sequences WHERE sequence_name = 'RESULTS_SEQ';
+--   SELECT NVL(MAX(result_id), 0) FROM results;
+--
+-- The first must exceed the second.
 
 
 -- == SECTION 2 — indexes ====================================================

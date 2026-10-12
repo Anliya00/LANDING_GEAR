@@ -41,8 +41,14 @@ EXPECTED: dict[str, list[str]] = {
     "flight_status": ["flight_status_id", "flight_id", "status", "remarks", "date_time"],
 }
 
-SEQUENCES = ["events_seq", "parameters_seq", "units_seq",
-             "event_timestamps_seq", "results_seq"]
+#: sequence -> (table, id column) it allocates for.
+SEQUENCES: dict[str, tuple[str, str]] = {
+    "events_seq": ("events", "event_id"),
+    "parameters_seq": ("parameters", "param_id"),
+    "units_seq": ("units", "unit_id"),
+    "event_timestamps_seq": ("event_timestamps", "event_timestamp_id"),
+    "results_seq": ("results", "result_id"),
+}
 
 
 def _tables(cur) -> set[str]:
@@ -117,14 +123,38 @@ def check_schema(conn) -> int:
 
     print("\nSEQUENCES")
     have = _sequences(cur)
-    for name in SEQUENCES:
-        if name in have:
-            print(f"{OK}{name}")
-        else:
+    for name, (table, id_column) in SEQUENCES.items():
+        if name not in have:
             print(
                 f"{WARN}{name} — absent. The code falls back to MAX(id)+1, which is "
                 "single-writer only. Fine for one worker, not for two."
             )
+            continue
+
+        # A sequence sitting at or below the data hands out ids that already
+        # exist, and every insert fails on the primary key. This happens when a
+        # sequence is created with START WITH 1 against a table that already
+        # holds rows.
+        if table not in present:
+            print(f"{OK}{name}")
+            continue
+        cur.execute(f"SELECT NVL(MAX({id_column}), 0) FROM {table}")
+        highest = int(cur.fetchone()[0])
+        cur.execute(
+            "SELECT last_number FROM user_sequences WHERE sequence_name = UPPER(:n)", n=name
+        )
+        row = cur.fetchone()
+        nxt = int(row[0]) if row else 0
+        if nxt > highest:
+            print(f"{OK}{name}  next {nxt}, max {id_column} {highest}")
+        else:
+            print(
+                f"{MISS}{name} is at {nxt} but {table}.{id_column} already reaches "
+                f"{highest}. It would hand out ids that exist and every insert would "
+                f"fail on the primary key. Fix with:\n"
+                f"         ALTER SEQUENCE {name} RESTART START WITH {highest + 1};"
+            )
+            problems += 1
 
     print("\nSTATUS VALUES IN USE")
     if "flight_status" in present:
