@@ -85,10 +85,40 @@ def main() -> int:
                         f"unit={unit!r} -> {reference_repo.canonical_unit(unit)!r}): {exc}"
                     ) from exc
 
+            # Commit before verifying. `connection()` commits on a clean exit,
+            # but then the check below would be reading the same uncommitted
+            # transaction and could not tell a real write from a pending one.
+            conn.commit()
+
         print(
             f"\ninserted {len(missing_events)} event(s) "
             f"and {len(missing_params)} parameter(s)"
         )
+
+        # Read it back on a fresh connection. A seed that reports success and
+        # leaves nothing behind is the failure that costs the most time, because
+        # the next command blames itself.
+        with connection() as conn:
+            still_missing_e, still_missing_p = reference_repo.missing_reference(
+                conn, event_keys, set(param_definitions)
+            )
+        if still_missing_e or still_missing_p:
+            print(
+                "\nVERIFY FAILED — the rows are not in the database after committing:",
+                file=sys.stderr,
+            )
+            for key in still_missing_e:
+                print(f"  EVENTS     {key}", file=sys.stderr)
+            for name in still_missing_p:
+                print(f"  PARAMETERS {name}", file=sys.stderr)
+            print(
+                "\nThe inserts raised nothing, so this is a transaction or a "
+                "permissions problem rather than bad data. Check that the "
+                "ORACLE_USER in .env can INSERT into EVENTS and PARAMETERS.",
+                file=sys.stderr,
+            )
+            return 2
+        print("verified: every event and parameter the families need is now present")
     except Exception as exc:  # noqa: BLE001
         print(f"FAILED: {exc}", file=sys.stderr)
         return 2
