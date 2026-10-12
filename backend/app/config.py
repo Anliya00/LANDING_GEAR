@@ -1,3 +1,12 @@
+"""Settings. REPLACES the existing backend/app/config.py.
+
+Only the Compute block at the bottom is new; everything above it is unchanged
+from the current file, `data_dir` included. Every field name maps to an
+environment variable of the same name, and `.env` is read automatically.
+Fields with no default are required — the process refuses to start without
+them rather than connecting somewhere unintended.
+"""
+
 from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -31,9 +40,29 @@ class Settings(BaseSettings):
     # CORS — comma separated
     cors_origins: str = "http://localhost:5173"
 
+    # --- Compute (new) -----------------------------------------------------
+
+    #: Which parameter families the analysis worker runs, in order. Comma
+    #: separated. Each must be registered in app.compute.registry.
+    compute_families: str = (
+        "retraction,extension,mass,sink_rate,landing_roll,load_factor"
+    )
+
+    #: How RESULTS points at the two events a value was measured between.
+    #: "id"        — START/END_EVENT_TIMESTAMP hold EVENT_TIMESTAMP_ID, which is
+    #:               what the requirements specify
+    #: "timestamp" — they hold the datetimes themselves
+    #: `python -m scripts.check_db` reads the real column type and tells you
+    #: which value this needs.
+    results_link_mode: str = "id"
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
+    @property
+    def compute_family_list(self) -> list[str]:
+        return [f.strip() for f in self.compute_families.split(",") if f.strip()]
 
 
 @lru_cache
