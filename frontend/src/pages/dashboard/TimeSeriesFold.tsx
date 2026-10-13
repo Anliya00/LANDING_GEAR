@@ -232,10 +232,11 @@ export function TimeSeriesPanel({ meta, aircraft }: { meta: Meta | null; aircraf
     let live = true;
     setPlotLoading(true);
     const timer = setTimeout(() => {
+      const asked = performance.now();
       const req = tab === 'landing'
         ? analysisApi.landing(selected.flight_id, seq, before, after).then((r) => { if (live) { setLanding(r); setCycle(null); } })
         : analysisApi.cycle(selected.flight_id, tab, seq, before, after).then((r) => { if (live) { setCycle(r); setLanding(null); } });
-      req.then(() => { if (live) setPlotError(null); })
+      req.then(() => { console.debug(`[plot] data fetched in ${Math.round(performance.now() - asked)} ms`); if (live) setPlotError(null); })
         .catch((e) => { if (live) { setPlotError(e.message || 'Could not load the plot'); setCycle(null); setLanding(null); } })
         .finally(() => { if (live) setPlotLoading(false); });
     }, 200);

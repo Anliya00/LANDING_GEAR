@@ -1,5 +1,5 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { fmtClock, fmtNum, monthName } from './format';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { fmtClock, fmtNum } from './format';
 
 /** Series colours. Fixed, not theme tokens: a line keeps its meaning in both themes. */
 export const COLORS = {
@@ -11,51 +11,215 @@ export const COLORS = {
   slate: '#64748b',
 };
 
-function useWidth<T extends HTMLElement>(): [React.RefObject<T>, number] {
-  const ref = useRef<T>(null);
-  const [width, setWidth] = useState(640);
-  useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const measure = () => setWidth(Math.max(280, Math.floor(el.clientWidth)));
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => ro.disconnect();
+/* ===========================================================================
+   Plotly wrapper.
+
+   All dashboard plots are drawn by Plotly (cartesian bundle, ~1 MB minified).
+   It is loaded on first use as its own chunk, so the rest of the app does not
+   pay for it. Plotly gives every chart: hover read-out, box zoom, pan, double
+   click to reset, legend toggling and a "download as PNG" button.
+   =========================================================================== */
+
+export interface Theme {
+  ink: string;
+  muted: string;
+  faint: string;
+  grid: string;
+  sunken: string;
+  raised: string;
+  font: string;
+}
+
+function readTheme(el: HTMLElement): Theme {
+  const cs = getComputedStyle(el);
+  const g = (name: string, fallback: string) => cs.getPropertyValue(name).trim() || fallback;
+  return {
+    ink: g('--ink-strong', '#1f2937'),
+    muted: g('--ink-muted', '#64748b'),
+    faint: g('--ink-faint', '#94a3b8'),
+    grid: g('--divider', '#e5e7eb'),
+    sunken: g('--bg-sunken', '#f6f7f9'),
+    raised: g('--bg-raised', '#ffffff'),
+    font: cs.fontFamily || 'system-ui, sans-serif',
+  };
+}
+
+let plotlyPromise: Promise<any> | null = null;
+const loadPlotly = () => (plotlyPromise ??= import('plotly.js-cartesian-dist-min').then((m) => m.default));
+
+/** Start loading Plotly before the first chart needs it (called when the dashboard opens). */
+export const preloadPlotly = () => { void loadPlotly(); };
+
+interface Spec { data: any[]; layout: any }
+
+/**
+ * Plotly shows numeric dates in the browser's time zone, which would shift every
+ * clock time. Wall-clock strings are drawn exactly as written, so all x values
+ * go through this.
+ */
+const wall = (ms: number) => new Date(ms).toISOString().replace('T', ' ').slice(0, 23);
+
+/**
+ * The read-out follows the pointer through ordinary mouse events, not through
+ * Plotly's hover system. Plotly throttles its hover events and recomputes hover
+ * points on every move, which made the box trail behind the pointer. Here the
+ * box and the cursor line are moved straight on the DOM node on every mouse
+ * move; only the box's text goes through React, once per animation frame.
+ *
+ * `tip` gets the time under the pointer (ms on the wall-clock axis) and returns
+ * the box content. `snapMs`, when given, snaps the cursor line to the nearest
+ * of those x positions (the trend charts snap to a bucket).
+ */
+type TipFn = (cursorMs: number) => ReactNode;
+
+function PlotlyChart({
+  spec, height, filename, tip, tipTop = 8, snapMs,
+}: {
+  spec: (t: Theme) => Spec;
+  height: number;
+  filename: string;
+  tip?: TipFn;
+  tipTop?: number;
+  snapMs?: number[];
+}) {
+  const host = useRef<HTMLDivElement>(null);
+  const cursor = useRef<HTMLDivElement>(null);
+  const box = useRef<HTMLDivElement | null>(null);
+  const [scheme, setScheme] = useState(0);
+  const [tipNode, setTipNode] = useState<ReactNode>(null);
+  const lastX = useRef<number | null>(null);
+  const pendingNode = useRef<ReactNode>(null);
+  const frame = useRef(0);
+  const tipRef = useRef(tip);
+  tipRef.current = tip;
+  const snapRef = useRef(snapMs);
+  snapRef.current = snapMs;
+
+  // Re-theme when the operating-system colour scheme flips.
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const bump = () => setScheme((n) => n + 1);
+    mq.addEventListener('change', bump);
+    return () => mq.removeEventListener('change', bump);
   }, []);
-  return [ref, width];
-}
 
-/** A "nice" step (1, 2, 5 x 10^n) giving roughly `count` intervals over `span`. */
-function niceStep(span: number, count: number): number {
-  if (span <= 0 || !Number.isFinite(span)) return 1;
-  const raw = span / count;
-  const mag = 10 ** Math.floor(Math.log10(raw));
-  const norm = raw / mag;
-  const f = norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10;
-  return f * mag;
-}
+  // Draw when the data or settings change; Plotly.react diffs against what is on screen.
+  useEffect(() => {
+    const el = host.current;
+    if (!el) return;
+    let live = true;
+    loadPlotly().then((Plotly) => {
+      if (!live || !host.current) return;
+      const t = readTheme(el);
+      const { data, layout } = spec(t);
+      const started = performance.now();
+      Plotly.react(el, data, {
+        autosize: true,
+        height,
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        font: { family: t.font, size: 12, color: t.muted },
+        hovermode: false,           // read-out and cursor are ours (see above)
+        ...layout,
+      }, {
+        responsive: true,
+        displaylogo: false,
+        displayModeBar: 'hover',
+        modeBarButtonsToRemove: ['lasso2d', 'select2d'],
+        toImageButtonOptions: { format: 'png', filename, scale: 2 },
+      });
+      console.debug(`[plot] ${filename} drawn in ${Math.round(performance.now() - started)} ms`);
+    });
+    return () => { live = false; };
+    // spec is rebuilt only when the parent re-renders (new data or settings), never on hover
+  }, [spec, height, filename, scheme]);
 
-function niceTicks(lo: number, hi: number, count = 5): number[] {
-  const step = niceStep(hi - lo, count);
-  const out: number[] = [];
-  for (let v = Math.ceil(lo / step) * step; v <= hi + step * 1e-6; v += step) {
-    out.push(Math.abs(v) < step * 1e-9 ? 0 : Number(v.toPrecision(12)));
-  }
-  return out;
-}
+  // Panels start hidden (tabs / closed folds), so Plotly sizes itself when they appear.
+  useEffect(() => {
+    const el = host.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => {
+      if (el.clientWidth > 0 && plotlyPromise) plotlyPromise.then((P) => P.Plots.resize(el));
+    });
+    ro.observe(el);
+    return () => {
+      ro.disconnect();
+      plotlyPromise?.then((P) => P.purge(el));
+    };
+  }, []);
 
-const CLOCK_STEPS = [0.1, 0.25, 0.5, 1, 2, 5, 10, 15, 20, 30, 60, 120, 300, 600, 900, 1800, 3600];
-function clockTicks(lo: number, hi: number, target = 6): number[] {
-  const span = hi - lo;
-  const step = CLOCK_STEPS.find((s) => span / s <= target) ?? 3600;
-  const out: number[] = [];
-  for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) out.push(v);
-  return out;
+  /** Put the box beside the pointer: right of it, flipping left past the middle. */
+  const place = (el: HTMLDivElement, px: number) => {
+    const flip = px > (host.current?.clientWidth ?? 600) / 2;
+    el.style.left = `${flip ? px - 14 : px + 14}px`;
+    el.style.transform = flip ? 'translateX(-100%)' : '';
+  };
+
+  const hide = () => {
+    lastX.current = null;
+    pendingNode.current = null;
+    if (cursor.current) cursor.current.style.display = 'none';
+    setTipNode(null);
+  };
+
+  const onMove = (e: React.MouseEvent) => {
+    const gd = host.current as any;
+    const fl = gd?._fullLayout;
+    if (!fl?.xaxis || !fl._size || e.buttons) { if (e.buttons) hide(); return; }   // buttons = dragging a zoom box
+    const rect = gd.getBoundingClientRect();
+    const size = fl._size;
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    if (mx < size.l || mx > size.l + size.w || my < size.t || my > size.t + size.h) { hide(); return; }
+
+    const xa = fl.xaxis;
+    let ms = xa.p2l(mx - xa._offset);
+    let px = mx;
+    const snaps = snapRef.current;
+    if (snaps?.length) {
+      ms = snaps.reduce((best, v) => (Math.abs(v - ms) < Math.abs(best - ms) ? v : best), snaps[0]);
+      px = xa._offset + xa.l2p(ms);
+    }
+    lastX.current = px;
+
+    if (cursor.current) {
+      const c = cursor.current.style;
+      c.display = 'block';
+      c.left = `${px}px`;
+      c.top = `${size.t}px`;
+      c.height = `${size.h}px`;
+    }
+    if (box.current) place(box.current, px);      // moves with the pointer, no React involved
+
+    if (tipRef.current) {
+      pendingNode.current = tipRef.current(ms);
+      if (!frame.current) {
+        frame.current = requestAnimationFrame(() => {
+          frame.current = 0;
+          setTipNode(pendingNode.current);
+        });
+      }
+    }
+  };
+
+  void scheme;
+  return (
+    <div style={{ position: 'relative', width: '100%' }} onMouseMove={onMove} onMouseLeave={hide}>
+      <div ref={host} style={{ width: '100%', height }} />
+      <div ref={cursor} className="chart-cursor-line" />
+      {tipNode && (
+        <div className="chart-tip" style={{ top: tipTop }}
+          ref={(el) => { box.current = el; if (el && lastX.current !== null) place(el, lastX.current); }}>
+          {tipNode}
+        </div>
+      )}
+    </div>
+  );
 }
 
 /* ===========================================================================
-   LineChart — the Trend fold. A true time scale, three lines, break at gaps.
+   LineChart — the Trend fold. A true date axis, three lines, break at gaps,
+   optional dashed limit line, hover read-out of all lines for a bucket.
    =========================================================================== */
 
 export interface LineSeries {
@@ -65,109 +229,78 @@ export interface LineSeries {
 }
 
 export function LineChart({
-  title, unit, xs, series, limit, height = 250, tip,
+  title, unit, xs, series, limit, height = 280, tip,
 }: {
   title: string;
   unit: string;
-  /** x position of each bucket, epoch milliseconds */
+  /** x position of each bucket, epoch milliseconds (UTC midnight) */
   xs: number[];
   series: LineSeries[];
   limit: number | null;
   height?: number;
+  /** lines of the hover read-out for the bucket at this index */
   tip?: (index: number) => string[];
 }) {
-  const [ref, width] = useWidth<HTMLDivElement>();
-  const [hover, setHover] = useState<number | null>(null);
-  const m = { l: 54, r: 18, t: 12, b: 30 };
-  const iw = width - m.l - m.r;
-  const ih = height - m.t - m.b;
+  const spec = (t: Theme): Spec => {
+    const xMin = xs[0] ?? 0;
+    const xMax = xs[xs.length - 1] ?? 1;
+    const spanDays = (xMax - xMin) / 86_400_000;
+    const dense = xs.length > 120;
 
-  const { y0, y1, yTicks } = useMemo(() => {
-    const all = series.flatMap((s) => s.values).filter((v): v is number => v !== null);
-    if (limit !== null) all.push(limit);
-    const hi = all.length ? Math.max(...all) : 1;
-    const lo = all.length ? Math.min(...all) : 0;
-    const floor = lo >= 0 ? 0 : lo;
-    const ticks = niceTicks(floor, hi, 5);
-    const step = ticks.length > 1 ? ticks[1] - ticks[0] : 1;
-    if ((ticks[ticks.length - 1] ?? 0) < hi) ticks.push(Number(((ticks[ticks.length - 1] ?? 0) + step).toPrecision(12)));
-    return { y0: floor, y1: ticks[ticks.length - 1] ?? hi, yTicks: ticks };
-  }, [series, limit]);
+    const data: any[] = series.map((s) => ({
+      type: 'scatter',
+      mode: 'lines+markers',
+      name: s.name,
+      x: xs.map(wall),
+      y: s.values,
+      connectgaps: false,
+      line: { color: s.color, width: 2, shape: 'linear' },
+      marker: { color: s.color, size: dense ? 4 : 7 },
+      hoverinfo: 'none',
+    }));
 
-  const xMin = xs[0] ?? 0;
-  const xMax = xs[xs.length - 1] ?? 1;
-  const sx = (x: number) => m.l + (xMax === xMin ? iw / 2 : ((x - xMin) / (xMax - xMin)) * iw);
-  const sy = (y: number) => m.t + ih - ((y - y0) / (y1 - y0 || 1)) * ih;
+    if (limit !== null) {
+      data.push({
+        type: 'scatter', mode: 'lines', name: 'Limit', x: [wall(xMin), wall(xMax)], y: [limit, limit],
+        line: { color: COLORS.slate, width: 1.5, dash: 'dash' },
+        hoverinfo: 'none',
+      });
+    }
 
-  const spanDays = (xMax - xMin) / 86_400_000;
-  const ticks = useMemo(() => {
-    const n = Math.min(8, Math.max(2, xs.length));
-    return Array.from({ length: n }, (_, i) => xMin + ((xMax - xMin) * i) / (n - 1));
-  }, [xs.length, xMin, xMax]);
-  const label = (ms: number) => {
-    const d = new Date(ms);
-    return spanDays <= 90
-      ? `${d.getUTCDate()} ${monthName(d.getUTCMonth())}`
-      : `${monthName(d.getUTCMonth())} ${String(d.getUTCFullYear()).slice(2)}`;
+    return {
+      data,
+      layout: {
+        title: title ? { text: title, x: 0.01, font: { size: 14, color: t.ink } } : undefined,
+        margin: { l: 58, r: 18, t: title ? 40 : 28, b: 44 },
+        dragmode: 'zoom',
+        showlegend: true,
+        legend: { orientation: 'h', x: 0, y: 1.12, font: { color: t.ink } },
+        xaxis: {
+          type: 'date',
+          tickformat: spanDays <= 90 ? '%d %b' : '%b %y',
+          showgrid: false,
+          linecolor: t.grid,
+          tickfont: { color: t.muted, size: 11 },
+        },
+        yaxis: {
+          title: { text: unit, font: { size: 11, color: t.faint } },
+          rangemode: 'tozero',
+          gridcolor: t.grid,
+          zeroline: false,
+          tickfont: { color: t.muted, size: 11 },
+        },
+      },
+    };
   };
-
-  const paths = series.map((s) => {
-    let d = '';
-    let pen = false;
-    s.values.forEach((v, i) => {
-      if (v === null) { pen = false; return; }
-      d += `${pen ? 'L' : 'M'}${sx(xs[i]).toFixed(1)},${sy(v).toFixed(1)}`;
-      pen = true;
-    });
-    return d;
-  });
-
-  function onMove(e: React.MouseEvent<SVGSVGElement>) {
-    const box = e.currentTarget.getBoundingClientRect();
-    const px = e.clientX - box.left;
-    let best = 0;
-    let dist = Infinity;
-    xs.forEach((x, i) => {
-      const d = Math.abs(sx(x) - px);
-      if (d < dist) { dist = d; best = i; }
-    });
-    setHover(best);
-  }
-
   return (
-    <div className="dash-plot" ref={ref}>
-      {title && <div className="dash-plot-title">{title}</div>}
-      <svg width={width} height={height} onMouseMove={onMove} onMouseLeave={() => setHover(null)} role="img" aria-label={title}>
-        {yTicks.map((v) => (
-          <g key={v}>
-            <line x1={m.l} x2={width - m.r} y1={sy(v)} y2={sy(v)} className="chart-grid" />
-            <text x={m.l - 8} y={sy(v) + 4} textAnchor="end" className="chart-tick">{fmtNum(v, v % 1 ? 1 : 0)}</text>
-          </g>
-        ))}
-        <text transform={`translate(14 ${m.t + ih / 2}) rotate(-90)`} textAnchor="middle" className="chart-axis-title">{unit}</text>
-        {ticks.map((t, i) => (
-          <text key={t} x={sx(t)} y={height - 8} textAnchor={i === ticks.length - 1 ? 'end' : i === 0 ? 'start' : 'middle'} className="chart-tick">{label(t)}</text>
-        ))}
-        {limit !== null && (
-          <line x1={m.l} x2={width - m.r} y1={sy(limit)} y2={sy(limit)} stroke={COLORS.slate} strokeDasharray="6 5" strokeWidth={1.5} />
-        )}
-        {series.map((s, i) => (
-          <g key={s.name}>
-            <path d={paths[i]} fill="none" stroke={s.color} strokeWidth={2} strokeLinejoin="round" opacity={0.9} />
-            {s.values.map((v, j) => v === null ? null : (
-              <circle key={j} cx={sx(xs[j])} cy={sy(v)} r={xs.length > 120 ? 1.8 : 3} fill={s.color} />
-            ))}
-          </g>
-        ))}
-        {hover !== null && (
-          <line x1={sx(xs[hover])} x2={sx(xs[hover])} y1={m.t} y2={m.t + ih} className="chart-cursor" />
-        )}
-      </svg>
-      {hover !== null && tip && (
-        <div className="chart-tip" style={{ left: Math.min(Math.max(sx(xs[hover]) + 12, 8), width - 190), top: 40 }}>
-          {tip(hover).map((line, i) => <div key={i}>{line}</div>)}
-        </div>
-      )}
+    <div className="dash-plot">
+      <PlotlyChart spec={spec} height={height} filename={`trend-${unit}`} tipTop={40}
+        snapMs={xs}
+        tip={tip ? (ms) => {
+          let best = 0;
+          xs.forEach((x, i) => { if (Math.abs(x - ms) < Math.abs(xs[best] - ms)) best = i; });
+          return tip(best).map((line, i) => <div key={i}>{line}</div>);
+        } : undefined} />
     </div>
   );
 }
@@ -175,6 +308,8 @@ export function LineChart({
 /* ===========================================================================
    SignalStack — rows of signals on one shared clock-time axis.
    Used for the cycle panels (four 0/1 rows) and the landing roll (analog rows).
+   One Plotly figure with a y-axis per row, so zoom/pan on time moves every
+   row together and the hover read-out lists every signal at that instant.
    =========================================================================== */
 
 export interface SignalLine {
@@ -219,122 +354,131 @@ export function SignalStack({
   showAxis?: boolean;
   labelWidth?: number;
 }) {
-  const [ref, width] = useWidth<HTMLDivElement>();
-  const [hoverT, setHoverT] = useState<number | null>(null);
-  const m = { l: labelWidth, r: 14, t: 6, b: showAxis ? 26 : 6 };
-  const gap = 4;
-  const heights = rows.map((r) => r.height ?? (r.kind === 'binary' ? 38 : 84));
-  const total = m.t + m.b + heights.reduce((a, b) => a + b, 0) + gap * (rows.length - 1);
-  const iw = width - m.l - m.r;
-  const sx = (t: number) => m.l + ((t - xMin) / (xMax - xMin || 1)) * iw;
-  const tickList = useMemo(() => clockTicks(xMin, xMax), [xMin, xMax]);
+  const gap = 8;
+  const mt = 10;
+  const mb = showAxis ? 38 : 10;
+  const heights = rows.map((r) => r.height ?? (r.kind === 'binary' ? 46 : 96));
+  const inner = heights.reduce((a, b) => a + b, 0) + gap * (rows.length - 1);
+  const total = mt + mb + inner;
 
-  const geometry = useMemo(() => {
-    let y = m.t;
-    return rows.map((r, i) => {
-      const top = y;
-      y += heights[i] + gap;
-      let lo = 0;
-      let hi = 1;
-      if (r.kind === 'analog') {
-        if (r.domain) [lo, hi] = r.domain;
-        else {
-          const vals = r.lines.flatMap((l) => l.points.map((p) => p[1])).filter((v): v is number => v !== null);
-          lo = vals.length ? Math.min(...vals) : 0;
-          hi = vals.length ? Math.max(...vals) : 1;
-          const pad = (hi - lo || 1) * 0.08;
-          lo -= pad; hi += pad;
-        }
-      } else { lo = -0.12; hi = 1.12; }
-      return { top, h: heights[i], lo, hi };
+  const spec = (t: Theme): Spec => {
+    const names = rows.map((_, i) => (i === 0 ? 'y' : `y${i + 1}`));
+    const axisKeys = rows.map((_, i) => (i === 0 ? 'yaxis' : `yaxis${i + 1}`));
+    const layout: any = {
+      margin: { l: labelWidth + 8, r: 16, t: mt, b: mb },
+      dragmode: 'zoom',
+      showlegend: false,
+      uirevision: `${xMin}-${xMax}`,
+      shapes: [] as any[],
+      annotations: [] as any[],
+    };
+    const data: any[] = [];
+    let off = 0;
+
+    rows.forEach((r, i) => {
+      const step = r.kind === 'binary';
+      const top = 1 - off / inner;
+      const bottom = 1 - (off + heights[i]) / inner;
+      off += heights[i] + gap;
+
+      let range: [number, number];
+      if (step) range = [-0.15, 1.15];
+      else if (r.domain) range = r.domain;
+      else {
+        const vals = r.lines.flatMap((l) => l.points.map((p) => p[1])).filter((v): v is number => v !== null);
+        const lo = vals.length ? Math.min(...vals) : 0;
+        const hi = vals.length ? Math.max(...vals) : 1;
+        const pad = (hi - lo || 1) * 0.08;
+        range = [lo - pad, hi + pad];
+      }
+
+      layout[axisKeys[i]] = {
+        domain: [bottom, top],
+        range,
+        fixedrange: true,                 // zoom and pan move time only
+        anchor: 'x',
+        zeroline: false,
+        showline: false,
+        showgrid: !step,
+        gridcolor: t.grid,
+        tickfont: { size: 10, color: t.faint },
+        ...(step ? { tickvals: [0, 1] } : { nticks: 3 }),
+      };
+      // light band behind each row, as in the earlier design
+      layout.shapes.push({
+        type: 'rect', xref: 'paper', yref: 'paper', x0: 0, x1: 1, y0: bottom, y1: top,
+        fillcolor: t.sunken, line: { color: t.grid, width: 1 }, layer: 'below',
+      });
+      layout.annotations.push({
+        xref: 'paper', yref: 'paper', x: 0, y: (top + bottom) / 2, xanchor: 'right', yanchor: 'middle',
+        xshift: -34, text: r.label, showarrow: false, font: { size: 12, color: t.ink }, align: 'right',
+      });
+
+      r.lines.forEach((l) => {
+        data.push({
+          type: 'scatter', mode: 'lines', name: l.name,
+          x: l.points.map((p) => wall(p[0] * 1000)),
+          y: l.points.map((p) => p[1]),
+          xaxis: 'x', yaxis: names[i], connectgaps: false,
+          line: { color: l.color, width: step ? 2 : 1.8, dash: l.dashed ? 'dash' : 'solid', shape: step ? 'hv' : 'linear' },
+          hoverinfo: 'none',
+        });
+      });
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rows, width]);
 
-  function onMove(e: React.MouseEvent<SVGSVGElement>) {
-    const box = e.currentTarget.getBoundingClientRect();
-    const px = e.clientX - box.left;
-    if (px < m.l || px > width - m.r) { setHoverT(null); return; }
-    setHoverT(xMin + ((px - m.l) / iw) * (xMax - xMin));
-  }
+    layout.xaxis = {
+      type: 'date',
+      range: [wall(xMin * 1000), wall(xMax * 1000)],
+      anchor: names[names.length - 1],
+      showticklabels: showAxis,
+      ticks: showAxis ? 'outside' : '',
+      tickfont: { size: 11, color: t.muted },
+      tickformatstops: [
+        { dtickrange: [null, 1000], value: '%H:%M:%S.%L' },
+        { dtickrange: [1000, null], value: '%H:%M:%S' },
+      ],
+      showgrid: true,
+      gridcolor: t.grid,
+      linecolor: t.grid,
+    };
 
-  const pathFor = (line: SignalLine, g: { top: number; h: number; lo: number; hi: number }, step: boolean) => {
-    const y = (v: number) => g.top + g.h - ((v - g.lo) / (g.hi - g.lo || 1)) * g.h;
-    let d = '';
-    let pen = false;
-    let prevY = 0;
-    for (const [t, v] of line.points) {
-      if (v === null || t < xMin || t > xMax) { pen = false; continue; }
-      const px = sx(t).toFixed(1);
-      const py = y(v);
-      if (!pen) d += `M${px},${py.toFixed(1)}`;
-      else if (step) d += `H${px}V${py.toFixed(1)}`;
-      else d += `L${px},${py.toFixed(1)}`;
-      pen = true;
-      prevY = py;
-    }
-    void prevY;
-    return d;
+    // vertical event markers across every row, labels staggered so they never overlap
+    markers.forEach((mk, mi) => {
+      if (mk.t < xMin || mk.t > xMax) return;
+      layout.shapes.push({
+        type: 'line', xref: 'x', yref: 'paper', x0: wall(mk.t * 1000), x1: wall(mk.t * 1000), y0: 0, y1: 1,
+        line: { color: mk.color, width: 1.2, dash: 'dot' },
+      });
+      layout.annotations.push({
+        xref: 'x', yref: 'paper', x: wall(mk.t * 1000), y: 1, xanchor: 'left', yanchor: 'top',
+        xshift: 4, yshift: -2 - mi * 13, text: mk.label, showarrow: false,
+        font: { size: 10, color: mk.color },
+      });
+    });
+
+    return { data, layout };
   };
 
   return (
-    <div className="dash-stack" ref={ref}>
-      <svg width={width} height={total} onMouseMove={onMove} onMouseLeave={() => setHoverT(null)}>
-        {rows.map((r, i) => {
-          const g = geometry[i];
-          const step = r.kind === 'binary';
-          const y = (v: number) => g.top + g.h - ((v - g.lo) / (g.hi - g.lo || 1)) * g.h;
+    <div className="dash-stack">
+      <PlotlyChart spec={spec} height={total} filename="flight-signals"
+        tip={(cursorMs) => {
+          const t = cursorMs / 1000;
           return (
-            <g key={r.label + i}>
-              <rect x={m.l} y={g.top} width={iw} height={g.h} className="chart-band" rx={3} />
-              <text x={m.l - 12} y={g.top + g.h / 2 + 4} textAnchor="end" className="chart-row-label">{r.label}</text>
-              {step ? (
-                <>
-                  <text x={m.l - 3} y={y(1) + 3} textAnchor="end" className="chart-tick-sm">1</text>
-                  <text x={m.l - 3} y={y(0) + 3} textAnchor="end" className="chart-tick-sm">0</text>
-                </>
-              ) : (
-                <>
-                  <text x={m.l - 3} y={g.top + 9} textAnchor="end" className="chart-tick-sm">{fmtNum(g.hi - (g.hi - g.lo) * 0.04)}</text>
-                  <text x={m.l - 3} y={g.top + g.h - 2} textAnchor="end" className="chart-tick-sm">{fmtNum(g.lo + (g.hi - g.lo) * 0.04)}</text>
-                </>
-              )}
-              {r.lines.map((l) => (
-                <path key={l.name} d={pathFor(l, g, step)} fill="none" stroke={l.color}
-                  strokeWidth={step ? 2 : 1.8} strokeDasharray={l.dashed ? '5 4' : undefined} strokeLinejoin="round" />
-              ))}
-            </g>
+            <>
+              <div className="chart-tip-time">{fmtClock(t, 2)}</div>
+              {rows.flatMap((r) => r.lines.map((l) => {
+                const v = valueAt(l.points, t, r.kind === 'binary');
+                return (
+                  <div key={r.label + l.name}>
+                    <span className="chart-swatch" style={{ background: l.color }} />
+                    {l.name}: <b>{v === null ? '—' : r.kind === 'binary' ? v : fmtNum(v)}</b>
+                  </div>
+                );
+              }))}
+            </>
           );
-        })}
-
-        {markers.map((mk, mi) => mk.t >= xMin && mk.t <= xMax && (
-          <g key={mk.label}>
-            <line x1={sx(mk.t)} x2={sx(mk.t)} y1={m.t} y2={total - m.b} stroke={mk.color} strokeDasharray="3 3" strokeWidth={1.2} opacity={0.8} />
-            <text x={sx(mk.t) + 4} y={m.t + 10 + mi * 12} className="chart-marker" fill={mk.color}>{mk.label}</text>
-          </g>
-        ))}
-
-        {showAxis && tickList.map((t) => (
-          <text key={t} x={sx(t)} y={total - 8} textAnchor="middle" className="chart-tick">{fmtClock(t, t % 1 ? 1 : 0)}</text>
-        ))}
-
-        {hoverT !== null && <line x1={sx(hoverT)} x2={sx(hoverT)} y1={m.t} y2={total - m.b} className="chart-cursor" />}
-      </svg>
-
-      {hoverT !== null && (
-        <div className="chart-tip" style={{ left: Math.min(sx(hoverT) + 12, width - 200), top: 8 }}>
-          <div className="chart-tip-time">{fmtClock(hoverT, 2)}</div>
-          {rows.flatMap((r) => r.lines.map((l) => {
-            const v = valueAt(l.points, hoverT, r.kind === 'binary');
-            return (
-              <div key={r.label + l.name}>
-                <span className="chart-swatch" style={{ background: l.color }} />
-                {l.name}: <b>{v === null ? '—' : r.kind === 'binary' ? v : fmtNum(v)}</b>
-              </div>
-            );
-          }))}
-        </div>
-      )}
+        }} />
     </div>
   );
 }

@@ -235,3 +235,9 @@
 .fold-body .dash-plot { border: 0; padding: 0; background: none; }
 .fold-sub .ok { color: var(--engaged); font-weight: 600; }
 .fold-sub .bad { color: var(--warning); font-weight: 600; }
+
+/* vertical cursor line over a Plotly chart; moved directly by the mouse handler */
+.chart-cursor-line {
+  position: absolute; display: none; width: 0; pointer-events: none; z-index: 4;
+  border-left: 1px dotted var(--ink-faint);
+}

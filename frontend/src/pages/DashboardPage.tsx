@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { PageHeader } from '@/components/PageHeader';
 import { analysisApi, type Meta } from '@/api/analysis';
+import { preloadPlotly } from './dashboard/charts';
 import { PeriodBar, presetPeriod, type Period } from './dashboard/controls';
 import { usePersistedState } from './dashboard/persist';
 import { StatisticsPanel } from './dashboard/StatisticsFold';
@@ -28,6 +29,8 @@ export default function DashboardPage() {
   const [section, setSection] = usePersistedState<Section>('section', 'statistics');
   const [period, setPeriod] = usePersistedState<Period>('period', () => presetPeriod('month1'));
   const [aircraft, setAircraft] = usePersistedState<number | null>('aircraft', null);
+
+  useEffect(() => { preloadPlotly(); }, []);
 
   useEffect(() => {
     analysisApi.meta().then(setMeta).catch((e) => setError(e.message || 'Could not reach the analysis service'));

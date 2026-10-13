@@ -70,12 +70,6 @@ export function TrendPanel({ period }: { period: Period }) {
             <input type="number" className="num-input" value={limitText} placeholder="none" step="any"
               onChange={(e) => setLimits((l) => ({ ...l, [view]: e.target.value }))} />
           </label>
-          <div className="legend">
-            <span><i style={{ background: COLORS.blue }} />Average</span>
-            <span><i style={{ background: COLORS.red }} />Max</span>
-            <span><i style={{ background: COLORS.green }} />Min</span>
-            <span><i className="dashed" style={{ borderColor: COLORS.slate }} />Limit</span>
-          </div>
         </div>
         <p className="dash-note">The trend covers the whole fleet, so the aircraft selection above does not apply here.</p>
       </Fold>

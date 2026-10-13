@@ -14,6 +14,7 @@ async def ingestion_worker():
     """Background task to process pending ingestion jobs."""
     s = get_settings()
     data_dir = Path(s.data_dir).resolve()
+    logger.info(f"ingestion worker starting; watching {data_dir} for PENDING flights")
     
     while True:
         try:
