@@ -1,0 +1,487 @@
+/* ===========================================================================
+   Home Dashboard Page
+   Extended full-width layout, large clear typography, matching reference style.
+   =========================================================================== */
+
+.home-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s5);
+  width: 100%;
+  margin: 0;
+  padding: 0 0 var(--s6) 0;
+  box-sizing: border-box;
+}
+
+/* --- Hero Banner ----------------------------------------------------------- */
+
+.home-hero {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 290px;
+  padding: 44px 48px;
+  border-radius: 14px;
+  overflow: hidden;
+  background-size: cover;
+  background-position: center 65%;
+  background-repeat: no-repeat;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+  border: 1px solid var(--rule);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+[data-theme='light'] .home-hero {
+  background-image: url('/bg/banner-light.png');
+}
+
+[data-theme='dark'] .home-hero {
+  background-image: url('/bg/banner-dark.png');
+}
+
+.home-hero-overlay {
+  position: absolute;
+  inset: 0;
+  /* Crystal clear gradient: darkens left for text legibility, completely clear on right to showcase image */
+  background: linear-gradient(
+    90deg,
+    rgba(10, 18, 30, 0.85) 0%,
+    rgba(15, 23, 42, 0.45) 45%,
+    rgba(15, 23, 42, 0.10) 75%,
+    rgba(15, 23, 42, 0.02) 100%
+  );
+  z-index: 1;
+}
+
+[data-theme='light'] .home-hero-overlay {
+  background: linear-gradient(
+    90deg,
+    rgba(10, 18, 30, 0.78) 0%,
+    rgba(15, 23, 42, 0.38) 45%,
+    rgba(15, 23, 42, 0.05) 75%,
+    rgba(15, 23, 42, 0.0) 100%
+  );
+}
+
+.home-hero-content {
+  position: relative;
+  z-index: 2;
+  color: #ffffff;
+  max-width: 680px;
+}
+
+.home-hero-content h1 {
+  font-size: 36px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 0 0 12px 0;
+  color: #ffffff;
+  line-height: 1.2;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+}
+
+.home-hero-content p {
+  font-size: 18px;
+  color: rgba(255, 255, 255, 0.95);
+  margin: 0;
+  line-height: 1.5;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
+}
+
+.home-hero-stat {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  backdrop-filter: blur(14px);
+  padding: 20px 34px;
+  border-radius: 14px;
+  color: #ffffff;
+  text-align: center;
+  min-width: 170px;
+}
+
+.home-hero-stat-value {
+  font-size: 46px;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: #ffffff;
+}
+
+.home-hero-stat-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.92);
+  margin-top: 8px;
+  white-space: nowrap;
+}
+
+/* --- KPI Metric Cards ------------------------------------------------------ */
+
+.home-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--s4);
+  width: 100%;
+}
+
+.kpi-card {
+  background: var(--bg-raised);
+  border: 1px solid var(--rule);
+  border-radius: 14px;
+  padding: 22px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+}
+
+.kpi-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.kpi-icon-wrap {
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.kpi-icon-wrap.blue {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+}
+
+.kpi-icon-wrap.amber {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}
+
+.kpi-icon-wrap.red {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.kpi-icon-wrap.purple {
+  background: rgba(168, 85, 247, 0.15);
+  color: #a855f7;
+}
+
+.kpi-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.kpi-value {
+  font-size: 32px;
+  font-weight: 750;
+  line-height: 1.1;
+  color: var(--ink-strong);
+  font-variant-numeric: tabular-nums;
+}
+
+.kpi-label {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink-muted);
+  margin-top: 4px;
+}
+
+.kpi-footer {
+  font-size: 13.5px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-top: 4px;
+}
+
+.kpi-trend-green {
+  color: #10b981;
+}
+
+.kpi-trend-red {
+  color: #ef4444;
+}
+
+.kpi-trend-amber {
+  color: #f59e0b;
+}
+
+.kpi-trend-neutral {
+  color: var(--ink-muted);
+}
+
+/* --- Lower Two-Column Section --------------------------------------------- */
+
+.home-lower-grid {
+  display: grid;
+  grid-template-columns: 1fr 420px;
+  gap: var(--s5);
+  width: 100%;
+}
+
+.home-card {
+  background: var(--bg-raised);
+  border: 1px solid var(--rule);
+  border-radius: 14px;
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+}
+
+.home-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.home-card-header h2 {
+  font-size: 20px;
+  font-weight: 750;
+  margin: 0;
+  color: var(--ink-strong);
+  letter-spacing: -0.01em;
+}
+
+.home-view-all-link {
+  font-size: 15px;
+  font-weight: 650;
+  color: var(--accent);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: opacity 0.15s ease;
+}
+
+.home-view-all-link:hover {
+  text-decoration: underline;
+  opacity: 0.85;
+}
+
+/* --- Recent Flights Table ------------------------------------------------- */
+
+.home-flights-table-wrap {
+  overflow-x: auto;
+  width: 100%;
+}
+
+.home-flights-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
+}
+
+.home-flights-table th {
+  text-align: left;
+  padding: 12px 14px;
+  font-size: 13.5px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--ink-muted);
+  border-bottom: 1px solid var(--rule);
+  white-space: nowrap;
+}
+
+.home-flights-table td {
+  padding: 16px 14px;
+  border-bottom: 1px solid var(--rule);
+  color: var(--ink);
+  vertical-align: middle;
+}
+
+.home-flights-table tr:last-child td {
+  border-bottom: none;
+}
+
+.home-flights-table tr:hover td {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+[data-theme='dark'] .home-flights-table tr:hover td {
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.flight-id-cell {
+  font-weight: 700;
+  color: var(--ink-strong);
+  font-size: 15.5px;
+}
+
+/* --- Status Pills --------------------------------------------------------- */
+
+.home-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.home-status-pill.completed {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.home-status-pill.progress {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}
+
+.home-status-pill.pending {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+}
+
+.home-status-pill.warning {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.home-action-btn {
+  padding: 7px 16px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--accent);
+  background: transparent;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.home-action-btn:hover {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+.home-empty-notice {
+  text-align: center;
+  padding: 32px 16px;
+  color: var(--ink-muted);
+  font-size: 15px;
+}
+
+/* --- Needs Your Attention List -------------------------------------------- */
+
+.attention-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.attention-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: var(--bg);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  text-decoration: none;
+  color: var(--ink);
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.attention-item:hover {
+  border-color: var(--accent);
+  transform: translateX(3px);
+  background: var(--bg-raised);
+}
+
+.attention-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.attention-icon-wrap {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.attention-icon-wrap.red-fill {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.attention-icon-wrap.amber-fill {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+}
+
+.attention-icon-wrap.blue-fill {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+}
+
+.attention-icon-wrap.green-fill {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.attention-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink-strong);
+}
+
+.attention-arrow {
+  color: var(--ink-muted);
+  flex-shrink: 0;
+}
+
+/* --- Responsive Adjustments ----------------------------------------------- */
+
+@media (max-width: 1200px) {
+  .home-kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .home-lower-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .home-hero {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 20px;
+    padding: 24px;
+  }
+  .home-hero-stat {
+    width: 100%;
+  }
+  .home-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+}
