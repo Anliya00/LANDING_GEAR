@@ -5,6 +5,7 @@ from pathlib import Path
 from app.db.pool import connection
 from app.config import get_settings
 from app.services import excel_to_parquet
+from app.services.data_layout import find_flight_dir
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger('worker')
@@ -47,14 +48,9 @@ async def ingestion_worker():
                     # 3. Process
                     try:
                         # Find the folder (e.g. AC1_001_*)
-                        ac_dir = data_dir / "Aircrafts" / f"AC{ac_num}"
-                        target_dir = None
-                        if ac_dir.exists():
-                            for flight_dir in ac_dir.iterdir():
-                                if flight_dir.is_dir() and flight_dir.name.startswith(f"AC{ac_num}_{f_num:03d}_"):
-                                    target_dir = flight_dir
-                                    break
-                                    
+                        # Accepts both data/AC<n>/... and data/Aircrafts/AC<n>/...
+                        target_dir = find_flight_dir(data_dir, ac_num, f_num)
+
                         if not target_dir:
                             raise FileNotFoundError(f"Could not locate folder for AC{ac_num} Flight {f_num}")
                             
@@ -81,7 +77,7 @@ async def ingestion_worker():
                             
                         # Success
                         cur.execute(
-                            "UPDATE FLIGHT_STATUS SET STATUS = 'UPLOAD COMPLETE', DATE_TIME = SYSTIMESTAMP WHERE FLIGHT_STATUS_ID = :1",
+                            "UPDATE FLIGHT_STATUS SET STATUS = 'ANALYSIS PENDING', DATE_TIME = SYSTIMESTAMP WHERE FLIGHT_STATUS_ID = :1",
                             [status_id]
                         )
                         cur.execute(
@@ -89,13 +85,13 @@ async def ingestion_worker():
                             [flight_id]
                         )
                         conn.commit()
-                        logger.info(f"Flight {flight_id} completed successfully (Upload Complete)")
+                        logger.info(f"Flight {flight_id} converted; queued for analysis (Analysis Pending)")
                         
                     except Exception as e:
                         logger.error(f"Flight {flight_id} failed: {e}")
                         cur.execute(
                             "UPDATE FLIGHT_STATUS SET STATUS = 'UPLOAD FAILED', REMARKS = :1, DATE_TIME = SYSTIMESTAMP WHERE FLIGHT_STATUS_ID = :2",
-                            [str(traceback.format_exc()), status_id]
+                            [f"{type(e).__name__}: {e}"[:50], status_id]  # REMARKS is VARCHAR2(50)
                         )
                         cur.execute(
                             "UPDATE FLIGHTS SET UPLOAD_END_TIME = SYSTIMESTAMP WHERE FLIGHT_ID = :1",

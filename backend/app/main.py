@@ -13,13 +13,18 @@ from app.db.pool import close_pool, init_pool
 
 import asyncio
 from app.services.worker import ingestion_worker
+from app.services.analysis_worker import analysis_worker
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     init_pool()
     worker_task = asyncio.create_task(ingestion_worker())
+    # Analysis runs as its own task so a long computation never delays
+    # the next upload's Parquet conversion.
+    analysis_task = asyncio.create_task(analysis_worker())
     yield
     worker_task.cancel()
+    analysis_task.cancel()
     close_pool()
 
 
@@ -48,6 +53,10 @@ from app.api import flight as flight_api
 app.include_router(flight_api.router)
 from app.api import ingestion as ingestion_api
 app.include_router(ingestion_api.router)
+from app.api import processing as processing_api
+app.include_router(processing_api.router)
+from app.api import analysis as analysis_api
+app.include_router(analysis_api.router)
 
 @app.get("/health", tags=["meta"])
 async def health() -> dict[str, str]:

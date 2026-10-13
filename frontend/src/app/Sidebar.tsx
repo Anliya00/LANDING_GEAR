@@ -1,7 +1,7 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { PanelLeftClose, PanelLeftOpen, Plane } from 'lucide-react';
 import { NAV } from './nav';
-import { AircraftMark } from './AircraftMark';
+import { AircraftMark } from './AircraftMark1';
 import { useSession } from '@/auth/guards';
 import { lastFlightPath } from '@/flight/FlightProvider';
 
