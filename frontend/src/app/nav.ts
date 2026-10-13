@@ -28,7 +28,7 @@ export const NAV: NavGroup[] = [
     { label: 'Events',   to: '/events',           icon: Activity,  flightScoped: true },
   ]},
   { label: 'Fleet', items: [
-    { label: 'Fleet Statistics', to: '/statistics', icon: BarChart3 },
+    { label: 'Analysis Dashboard', to: '/dashboard', icon: BarChart3 },
   ]},
   { label: 'Admin', items: [
     { label: 'Configuration',   to: '/configuration', icon: Settings },

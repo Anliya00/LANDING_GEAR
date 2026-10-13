@@ -48,6 +48,8 @@ from app.api import flight as flight_api
 app.include_router(flight_api.router)
 from app.api import ingestion as ingestion_api
 app.include_router(ingestion_api.router)
+from app.api import analysis as analysis_api
+app.include_router(analysis_api.router)
 
 @app.get("/health", tags=["meta"])
 async def health() -> dict[str, str]:

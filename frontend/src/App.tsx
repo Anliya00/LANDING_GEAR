@@ -13,7 +13,7 @@ import EventInspectorPage from './pages/EventInspectorPage';
 import PlotPage from './pages/PlotPage';
 import IngestionPage from './pages/IngestionPage';
 import QueuePage from './pages/QueuePage';
-import StatisticsPage from './pages/StatisticsPage';
+import DashboardPage from './pages/DashboardPage';
 import ConfigurationPage from './pages/ConfigurationPage';
 import UsersPage from './pages/UsersPage';
 import NotFoundPage from './pages/NotFoundPage';
@@ -37,7 +37,8 @@ export default function App() {
 
         <Route path="ingestion" element={<IngestionPage />} />
         <Route path="queue" element={<QueuePage />} />
-        <Route path="statistics" element={<StatisticsPage />} />
+        <Route path="dashboard" element={<DashboardPage />} />
+        <Route path="statistics" element={<Navigate to="/dashboard" replace />} />
         <Route path="configuration" element={<ConfigurationPage />} />
         <Route
           path="users"
