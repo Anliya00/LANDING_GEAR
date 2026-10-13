@@ -8,6 +8,7 @@ from app.db.pool import connection
 from app.db import flight_repo
 from app.deps import current_user
 from app.schemas.auth import CurrentUser
+from app.services.data_layout import iter_aircraft_dirs
 from app.schemas.ingestion import ScanResult, FolderInfo
 
 router = APIRouter(prefix="/ingestion", tags=["ingestion"])
@@ -37,7 +38,7 @@ async def list_folders(user: CurrentUser = Depends(current_user)) -> ScanResult:
     
     if data_dir.exists():
         # Look for Aircraft folders first (e.g., AC1, AC2)
-        for ac_dir in data_dir.glob("Aircrafts/AC*"):
+        for ac_dir in iter_aircraft_dirs(data_dir):
             if not ac_dir.is_dir():
                 continue
                 

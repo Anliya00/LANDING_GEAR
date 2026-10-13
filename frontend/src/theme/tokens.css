@@ -50,7 +50,7 @@
   --nav-bg-active: #1677ff;
   --nav-bg-hover: #e1ecfa;
   --nav-label: #7d8fa3;
-  --art-stroke: rgba(22, 119, 255, 0.26);
+  --art-stroke: rgba(22, 119, 255, 0.50);
 }
 
 [data-theme='dark'] {
@@ -91,7 +91,7 @@
   --nav-bg-active: #087bff;
   --nav-bg-hover: #123a56;
   --nav-label: #7f96aa;
-  --art-stroke: rgba(91, 167, 255, 0.30);
+  --art-stroke: rgba(150, 195, 240, 0.72);
 }
 
 /* --- Type ---------------------------------------------------------------- */
