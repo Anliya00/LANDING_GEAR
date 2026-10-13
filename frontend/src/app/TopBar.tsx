@@ -1,22 +1,29 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronDown, Sun, Moon } from 'lucide-react';
+import { ChevronDown, Sun, Moon, Search, Bell } from 'lucide-react';
 import { useSession, roleLabel } from '@/auth/guards';
 import { useFlight } from '@/flight/FlightProvider';
 import { useTheme } from '@/theme/ThemeProvider';
-
 
 export function TopBar() {
   const { user, signOut } = useSession();
   const { flight } = useFlight();
   const { theme, toggle } = useTheme();
   const [open, setOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const nav = useNavigate();
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      nav(`/flights?search=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
 
   return (
     <header className="topbar">
       <div className="topbar-left">
-        {flight && (
+        {flight ? (
           <button type="button" className="flight-chip"
                   onClick={() => nav(`/flights/${flight.tail}`)}>
             <strong>{flight.tail}</strong>
@@ -26,13 +33,23 @@ export function TopBar() {
               {flight.declaredDate} (declared)
             </span>
           </button>
+        ) : (
+          <form onSubmit={handleSearchSubmit} className="topbar-search">
+            <Search size={16} />
+            <input 
+              type="text" 
+              placeholder="Search flights (e.g. AFR256, A320, 2026-10-03)..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </form>
         )}
       </div>
 
       <div className="topbar-right">
-        {/* Queue activity slot — rendered when /queue lands. Deliberately
-            empty rather than a bell with nothing behind it. */}
-        <span className="activity-slot" />
+        <button type="button" className="icon-btn" title="Notifications" aria-label="Notifications">
+          <Bell size={19} />
+        </button>
 
         <button type="button" className="icon-btn" onClick={toggle}
                 aria-label="Toggle theme">
