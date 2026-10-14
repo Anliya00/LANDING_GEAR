@@ -20,12 +20,12 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  min-height: 290px;
+  min-height: clamp(290px, 20vw, 360px);
   padding: 44px 48px;
   border-radius: 14px;
   overflow: hidden;
   background-size: cover;
-  background-position: center 65%;
+  background-position: center 90%;
   background-repeat: no-repeat;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
   border: 1px solid var(--rule);
