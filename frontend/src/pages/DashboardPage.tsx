@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { BarChart3, LineChart, TrendingUp, RotateCcw, RefreshCw } from 'lucide-react';
 import { PageHeader } from '@/components/PageHeader';
 import { analysisApi, type Meta } from '@/api/analysis';
 import { preloadPlotly } from './dashboard/charts';
@@ -10,10 +11,10 @@ import { TrendPanel } from './dashboard/TrendFold';
 import './dashboard/dashboard.css';
 
 type Section = 'statistics' | 'timeseries' | 'trend';
-const SECTIONS: { id: Section; label: string }[] = [
-  { id: 'statistics', label: 'Statistics' },
-  { id: 'timeseries', label: 'Time series plots' },
-  { id: 'trend', label: 'Trend' },
+const SECTIONS: { id: Section; label: string; icon: typeof BarChart3 }[] = [
+  { id: 'statistics', label: 'Statistics', icon: BarChart3 },
+  { id: 'timeseries', label: 'Time series plots', icon: LineChart },
+  { id: 'trend', label: 'Trend', icon: TrendingUp },
 ];
 
 /**
@@ -29,12 +30,40 @@ export default function DashboardPage() {
   const [section, setSection] = usePersistedState<Section>('section', 'statistics');
   const [period, setPeriod] = usePersistedState<Period>('period', () => presetPeriod('month1'));
   const [aircraft, setAircraft] = usePersistedState<number | null>('aircraft', null);
+  const [resetKey, setResetKey] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => { preloadPlotly(); }, []);
 
   useEffect(() => {
     analysisApi.meta().then(setMeta).catch((e) => setError(e.message || 'Could not reach the analysis service'));
   }, []);
+
+  const handleResetPlots = () => {
+    try {
+      Object.keys(localStorage).forEach((k) => {
+        if (k.startsWith('sftad.dashboard.')) {
+          localStorage.removeItem(k);
+        }
+      });
+    } catch { /* ignore */ }
+    setAircraft(null);
+    setPeriod(presetPeriod('month1'));
+    setResetKey((prev) => prev + 1);
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      const data = await analysisApi.meta();
+      setMeta(data);
+      setError(null);
+    } catch (e: any) {
+      setError(e.message || 'Could not reach the analysis service');
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const extent = meta?.extent;
   return (
@@ -44,7 +73,31 @@ export default function DashboardPage() {
         description={
           extent && extent.flights
             ? `${extent.flights} analysed flights, ${extent.first} to ${extent.last}`
-            : 'Statistics, time series plots and trends from computed flight results.'
+            : 'Telemetry diagnostics, landing gear cycle analysis, and parameter trends.'
+        }
+        banner={true}
+        actions={
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={handleResetPlots}
+              title="Reset all filters and clear plotted curves"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+            >
+              <RotateCcw size={16} /> Reset Plots
+            </button>
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={handleRefresh}
+              disabled={refreshing}
+              title="Reload metadata and refresh analysis data"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+            >
+              <RefreshCw size={16} className={refreshing ? 'spin' : ''} /> Refresh
+            </button>
+          </div>
         }
       />
       {error && <div className="dash-error" role="alert">{error}</div>}
@@ -62,9 +115,17 @@ export default function DashboardPage() {
 
       <nav className="dash-tabs" role="tablist" aria-label="Dashboard sections">
         {SECTIONS.map((s) => (
-          <button key={s.id} type="button" role="tab" aria-selected={section === s.id}
-            className={`dash-tab ${section === s.id ? 'is-on' : ''}`} onClick={() => setSection(s.id)}>
-            {s.label}
+          <button
+            key={s.id}
+            type="button"
+            role="tab"
+            aria-selected={section === s.id}
+            className={`dash-tab ${section === s.id ? 'is-on' : ''}`}
+            onClick={() => setSection(s.id)}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+          >
+            <s.icon size={18} />
+            <span>{s.label}</span>
           </button>
         ))}
       </nav>
@@ -73,7 +134,7 @@ export default function DashboardPage() {
         <StatisticsPanel period={period} aircraft={aircraft} />
       </div>
       <div className="dash-panel" role="tabpanel" hidden={section !== 'timeseries'}>
-        <TimeSeriesPanel meta={meta} aircraft={aircraft} />
+        <TimeSeriesPanel key={resetKey} meta={meta} aircraft={aircraft} />
       </div>
       <div className="dash-panel" role="tabpanel" hidden={section !== 'trend'}>
         <TrendPanel period={period} />
@@ -81,3 +142,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+

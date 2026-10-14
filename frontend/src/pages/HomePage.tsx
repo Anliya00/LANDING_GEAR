@@ -36,7 +36,7 @@ export default function HomePage() {
         const [flightsRes, foldersRes, aircraftRes] = await Promise.all([
           api.get<any[]>('/flights').catch(() => []),
           api.get<{ folders: any[] }>('/ingestion/folders').catch(() => ({ folders: [] })),
-          api.get<any[]>('/aircraft').catch(() => [])
+          api.get<any[]>('/aircrafts').catch(() => [])
         ]);
 
         const dbFlights = Array.isArray(flightsRes) ? flightsRes : [];
@@ -212,7 +212,7 @@ export default function HomePage() {
         <div className="home-card">
           <div className="home-card-header">
             <h2>Recent Flights</h2>
-            <Link to="/flights" className="home-view-all-link">
+            <Link to="/dashboard" className="home-view-all-link">
               View All →
             </Link>
           </div>

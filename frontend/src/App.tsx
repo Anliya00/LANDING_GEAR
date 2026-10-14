@@ -5,14 +5,7 @@ import { RequireAuth, RequirePermission } from '@/auth/guards';
 import LoginPage from './pages/Login/LoginPage';
 import ChangePasswordPage from './pages/Login/ChangePasswordPage';
 import HomePage from './pages/HomePage';
-import AircraftListPage from './pages/AircraftListPage';
-import AircraftFlightsPage from './pages/AircraftFlightsPage';
-import FlightOverviewPage from './pages/FlightOverviewPage';
-import FlightParametersPage from './pages/FlightParametersPage';
-import EventInspectorPage from './pages/EventInspectorPage';
-import PlotPage from './pages/PlotPage';
 import IngestionPage from './pages/IngestionPage';
-import QueuePage from './pages/QueuePage';
 import DashboardPage from './pages/DashboardPage';
 import ConfigurationPage from './pages/ConfigurationPage';
 import UsersPage from './pages/UsersPage';
@@ -27,18 +20,11 @@ export default function App() {
       <Route path="/" element={<RequireAuth><AppShell /></RequireAuth>}>
         <Route index element={<HomePage />} />
 
-        <Route path="flights" element={<AircraftListPage />} />
-        <Route path="flights/:tail" element={<AircraftFlightsPage />} />
-        <Route path="flights/:tail/:flightNo" element={<FlightOverviewPage />} />
-        <Route path="flights/:tail/:flightNo/parameters" element={<FlightParametersPage />} />
-        <Route path="flights/:tail/:flightNo/events" element={<EventInspectorPage />} />
-        <Route path="flights/:tail/:flightNo/plots" element={<Navigate to="retraction" replace />} />
-        <Route path="flights/:tail/:flightNo/plots/:set" element={<PlotPage />} />
-
         <Route path="ingestion" element={<IngestionPage />} />
-        <Route path="queue" element={<QueuePage />} />
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="statistics" element={<Navigate to="/dashboard" replace />} />
+        <Route path="flights/*" element={<Navigate to="/dashboard" replace />} />
+        <Route path="queue" element={<Navigate to="/ingestion" replace />} />
         <Route path="configuration" element={<ConfigurationPage />} />
         <Route
           path="users"
@@ -53,4 +39,4 @@ export default function App() {
       </Route>
     </Routes>
   );
-}
+}

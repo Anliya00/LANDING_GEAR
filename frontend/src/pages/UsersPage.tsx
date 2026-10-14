@@ -5,10 +5,11 @@ export default function UsersPage() {
   return (
     <>
       <PageHeader
-        title="User Management"
-        description="Current state of the dataset and recent activity."
+        title="User and Role Administration"
+        description="Manage system users, roles and permissions."
+        banner={true}
       />
-      <EmptyState title="Not built yet" />
+      <EmptyState title="User Management Interface" />
     </>
   );
 }

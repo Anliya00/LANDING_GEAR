@@ -270,6 +270,11 @@ export function TimeSeriesPanel({ meta, aircraft }: { meta: Meta | null; aircraf
             </datalist>
           </label>
           <button type="button" className="chip" onClick={reset}><RotateCcw size={14} /> Reset filters</button>
+          {selected && (
+            <button type="button" className="chip" onClick={() => setSelected(null)} title="Clear selected flight plot">
+              <RotateCcw size={14} /> Clear plot
+            </button>
+          )}
           <span className="dash-grow" />
           <span className="dash-count"><b>{list.flights.length}</b> flights match{aircraft ? ` AC${aircraft}` : ''}</span>
         </div>

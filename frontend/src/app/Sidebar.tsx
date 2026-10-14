@@ -1,25 +1,17 @@
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { PanelLeftClose, PanelLeftOpen, Plane } from 'lucide-react';
 import { NAV } from './nav';
 import { AircraftMark } from './AircraftMark1';
 import { useSession } from '@/auth/guards';
-import { lastFlightPath } from '@/flight/FlightProvider';
 
 export function Sidebar({
   collapsed, onToggle,
 }: { collapsed: boolean; onToggle: () => void }) {
   const { can } = useSession();
-  const loc = useLocation();
-
-  const m = loc.pathname.match(/^\/flights\/([^/]+)\/([^/]+)/);
-  const flightPath = m ? `${m[1]}/${m[2]}` : lastFlightPath();
-
-  const resolve = (to: string, scoped?: boolean) =>
-    scoped ? (flightPath ? `/flights/${flightPath}${to}` : '/flights') : to;
 
   return (
     <aside className={`sidebar${collapsed ? ' is-collapsed' : ''}`}>
-            <div className="sidebar-mark">
+      <div className="sidebar-mark">
         <Plane className="sidebar-mark-icon" size={34} strokeWidth={2} />
         {!collapsed && (
           <span className="sidebar-mark-text">
@@ -32,30 +24,19 @@ export function Sidebar({
       </div>
 
       <nav className="sidebar-nav">
-        {NAV.map((group) => {
-          const items = group.items.filter(
-            (i) => !i.permission || can(i.permission),
-          );
-          if (!items.length) return null;
-          return (
-            <div className="nav-group" key={group.label}>
-              {!collapsed && <p className="nav-label">{group.label}</p>}
-              {items.map((item) => (
-                <NavLink
-                  key={item.label}
-                  to={resolve(item.to, item.flightScoped)}
-                  end={item.to === '/'}
-                  title={collapsed ? item.label : undefined}
-                  className={({ isActive }) =>
-                    `nav-item${isActive ? ' is-active' : ''}`}
-                >
-                <item.icon size={22} strokeWidth={1.9} />
-                  {!collapsed && <span>{item.label}</span>}
-                </NavLink>
-              ))}
-            </div>
-          );
-        })}
+        {NAV.filter((item) => !item.permission || can(item.permission)).map((item) => (
+          <NavLink
+            key={item.label}
+            to={item.to}
+            end={item.to === '/'}
+            title={collapsed ? item.label : undefined}
+            className={({ isActive }) =>
+              `nav-item${isActive ? ' is-active' : ''}`}
+          >
+            <item.icon size={22} strokeWidth={1.9} />
+            {!collapsed && <span>{item.label}</span>}
+          </NavLink>
+        ))}
       </nav>
 
       <div className="sidebar-art" aria-hidden="true">

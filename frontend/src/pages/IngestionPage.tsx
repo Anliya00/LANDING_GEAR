@@ -31,11 +31,26 @@ function normaliseStatus(raw: string | null | undefined): string {
   return titled === 'Analyzing' ? 'Analysing' : titled;
 }
 
+// Format raw dates (e.g. 01072026 -> 01-07-2026)
+function formatDateStr(dstr: string | undefined | null): string {
+  if (!dstr) return '—';
+  const clean = dstr.trim();
+  if (/^\d{8}$/.test(clean)) {
+    return `${clean.slice(0, 2)}-${clean.slice(2, 4)}-${clean.slice(4, 8)}`;
+  }
+  if (/^\d{4}-\d{2}-\d{2}/.test(clean)) {
+    const parts = clean.split('T')[0].split('-');
+    return `${parts[2]}-${parts[1]}-${parts[0]}`;
+  }
+  return clean;
+}
+
 // Waiting for, or being worked on by, a background worker.
 const isBusy = (status: string) => {
   const s = status.toLowerCase();
   return s === 'uploading' || s === 'analysing' || s === 'analysis pending';
 };
+
 
 export default function IngestionPage() {
   const { can } = useSession();
@@ -239,39 +254,62 @@ export default function IngestionPage() {
 
       <div className="stats-cards">
         <div className="stat-card">
-          <div className="stat-icon" style={{background: 'rgba(59,130,246,0.1)', color: '#3b82f6'}}>
-            <Folder size={24} />
+          <div className="stat-card-header">
+            <div className="stat-icon blue">
+              <Folder size={26} />
+            </div>
+            <div className="stat-info">
+              <span className="stat-value">{stats.new}</span>
+              <span className="stat-label">New Folders</span>
+            </div>
           </div>
-          <div className="stat-info">
-            <h3>{stats.new}</h3>
-            <p>New Folders</p>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon" style={{background: 'rgba(245,158,11,0.1)', color: '#f59e0b'}}>
-            <Clock size={24} />
-          </div>
-          <div className="stat-info">
-            <h3>{stats.processing + stats.new}</h3>
-            <p>Pending Ingestion</p>
+          <div className="stat-footer stat-blue">
+            {stats.new > 0 ? `+${stats.new} incoming folders` : 'All folders registered'}
           </div>
         </div>
+
         <div className="stat-card">
-          <div className="stat-icon" style={{background: 'rgba(239,68,68,0.1)', color: '#ef4444'}}>
-            <AlertTriangle size={24} />
+          <div className="stat-card-header">
+            <div className="stat-icon amber">
+              <Clock size={26} />
+            </div>
+            <div className="stat-info">
+              <span className="stat-value">{stats.processing + stats.new}</span>
+              <span className="stat-label">Pending Ingestion</span>
+            </div>
           </div>
-          <div className="stat-info">
-            <h3>{stats.failed}</h3>
-            <p>Failed</p>
+          <div className={`stat-footer ${stats.processing + stats.new > 0 ? 'stat-amber' : 'stat-green'}`}>
+            {stats.processing + stats.new > 0 ? `↑ ${stats.processing + stats.new} in queue` : '✓ Ingestion queue clear'}
           </div>
         </div>
+
         <div className="stat-card">
-          <div className="stat-icon" style={{background: 'rgba(16,185,129,0.1)', color: '#10b981'}}>
-            <CheckCircle size={24} />
+          <div className="stat-card-header">
+            <div className="stat-icon red">
+              <AlertTriangle size={26} />
+            </div>
+            <div className="stat-info">
+              <span className="stat-value">{stats.failed}</span>
+              <span className="stat-label">Failed Ingestion</span>
+            </div>
           </div>
-          <div className="stat-info">
-            <h3>{stats.completed}</h3>
-            <p>Completed (Total)</p>
+          <div className={`stat-footer ${stats.failed > 0 ? 'stat-red' : 'stat-green'}`}>
+            {stats.failed > 0 ? `↑ ${stats.failed} items flagged` : '✓ Zero failure flags'}
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="stat-card-header">
+            <div className="stat-icon green">
+              <CheckCircle size={26} />
+            </div>
+            <div className="stat-info">
+              <span className="stat-value">{stats.completed}</span>
+              <span className="stat-label">Completed (Total)</span>
+            </div>
+          </div>
+          <div className="stat-footer stat-green">
+            ✓ Ready for analysis
           </div>
         </div>
       </div>
@@ -340,7 +378,7 @@ export default function IngestionPage() {
                   <td><input type="checkbox" /></td>
                   <td><strong>{f.folder_name}</strong></td>
                   <td>{f.flight_id}</td>
-                  <td className="tnum">{f.date_str}</td>
+                  <td className="tnum"><strong>{formatDateStr(f.date_str)}</strong></td>
                   <td>{f.aircraft}</td>
                   <td className="tnum">{f.file_count}</td>
                   <td className="tnum">{formatSize(f.size_bytes)}</td>

@@ -97,15 +97,15 @@
 /* --- Type ---------------------------------------------------------------- */
 
 :root {
-  --text-xs:   12px;
-  --text-sm:   14px;
-  --text-base: 15px;
-  --text-md:   16px;
-  --text-lg:   18px;
-  --text-xl:   22px;
-  --text-2xl:  26px;
+  --text-xs:   13.5px;
+  --text-sm:   15px;
+  --text-base: 16px;
+  --text-md:   17.5px;
+  --text-lg:   19.5px;
+  --text-xl:   24px;
+  --text-2xl:  28px;
   --text-3xl:  32px;
-  --text-4xl:  40px;
+  --text-4xl:  42px;
 
   --lh-tight:  1.25;
   --lh-normal: 1.5;
