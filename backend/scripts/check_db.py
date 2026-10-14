@@ -31,10 +31,13 @@ EXPECTED: dict[str, list[str]] = {
     "events": ["event_id", "event_name", "event_column_name", "transition", "source_file"],
     "parameters": ["param_id", "param_name", "description", "unit_id"],
     "units": ["unit_id", "unit_name"],
-    "event_timestamps": ["event_timestamp_id", "event_id", "flight_id", "date_time", "occur_seq"],
+    "event_timestamps": [
+        "event_timestamp_id", "event_id", "flight_id", "date_time", "occur_seq",
+        "anchor_timestamp_id",
+    ],
     "results": [
         "result_id", "flight_id", "param_id", "param_val", "occur_seq",
-        "start_event_timestamp", "end_event_timestamp", "status",
+        "start_event_timestamp", "end_event_timestamp", "status", "anchor_timestamp_id",
     ],
     "aircrafts": ["aircraft_id", "aircraft_number", "aircraft_mass_kg"],
     "flights": ["flight_id", "aircraft_id", "flight_number", "flight_date_time"],
@@ -335,9 +338,7 @@ def check_flight(conn, flight_id: int) -> int:
 
     print("\nCONSISTENCY")
     # Complete rows must carry a value and both links; Incomplete rows must not.
-    # INITIAL_FUEL_LOADED is a single reading, not measured between two events,
-    # so it legitimately has no links.
-    no_links = {"INITIAL_FUEL_LOADED"}
+    no_links: set[str] = set()
     bad = [
         (n, s) for n, s, v, st, a, b in results
         if (int(st) == 1 and (v is None or (n.upper() not in no_links and (a is None or b is None))))

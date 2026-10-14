@@ -140,11 +140,12 @@ def stats(
     date_from: dt.date | None = Query(None, alias="from"),
     date_to: dt.date | None = Query(None, alias="to"),
     aircraft: int | None = None,
+    flight_id: int | None = None,
     _: CurrentUser = Depends(current_user),
 ) -> dict[str, Any]:
     with connection() as conn:
-        cards = repo.statistics(conn, date_from, date_to, aircraft)
-        flights = repo.count_flights(conn, date_from, date_to, aircraft)
+        cards = repo.statistics(conn, date_from, date_to, aircraft, flight_id)
+        flights = 1 if flight_id is not None else repo.count_flights(conn, date_from, date_to, aircraft)
     return {"flights": flights, "cards": cards}
 
 
@@ -157,10 +158,12 @@ def flights(
     aircraft: int | None = None,
     flight_number: int | None = None,
     date: dt.date | None = None,
+    date_from: dt.date | None = Query(None, alias="from"),
+    date_to: dt.date | None = Query(None, alias="to"),
     _: CurrentUser = Depends(current_user),
 ) -> dict[str, Any]:
     with connection() as conn:
-        return repo.list_flights(conn, aircraft, flight_number, date)
+        return repo.list_flights(conn, aircraft, flight_number, date, date_from, date_to)
 
 
 # ---------------------------------------------------------------------------
@@ -407,6 +410,7 @@ def trend(
     group: Literal["day", "week", "month"] = "day",
     date_from: dt.date | None = Query(None, alias="from"),
     date_to: dt.date | None = Query(None, alias="to"),
+    aircraft: int | None = None,
     _: CurrentUser = Depends(current_user),
 ) -> dict[str, Any]:
     plots_def = repo.TREND_VIEWS[view]
@@ -416,8 +420,8 @@ def trend(
         end = date_to or (dt.date.fromisoformat(extent["last"]) if extent["last"] else None)
         if start is None or end is None or end < start:
             return {"flights": 0, "from": None, "to": None, "group": group, "plots": []}
-        rows = repo.trend_rows(conn, [p for p, _ in plots_def], start, end)
-        flights_in_period = repo.count_flights(conn, start, end)
+        rows = repo.trend_rows(conn, [p for p, _ in plots_def], start, end, aircraft)
+        flights_in_period = repo.count_flights(conn, start, end, aircraft)
 
     starts = _bucket_starts(start, end, group)
     if len(starts) > 2000:

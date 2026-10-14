@@ -147,11 +147,13 @@ def compute(
         following = next((b for b in boundaries if b > start), float("inf"))
         window = chains.Window(start, min(following, start + spec.window_cap_s))
 
-        detected[(spec.anchor, start)] = detected[(spec.anchor, start)].selected(cycle_no)
+        anchor_occurrence = detected[(spec.anchor, start)].selected(cycle_no)
+        detected[(spec.anchor, start)] = anchor_occurrence
+        out.cycle_anchors[cycle_no] = anchor_occurrence.ident
 
         steps: dict[str, list[Occurrence]] = {}
         for door, chain in door_chains.items():
-            walked = chains.walk(signals, chain, window, cycle_no)
+            walked = chains.walk(signals, chain, window, cycle_no, anchor_occurrence.ident)
             steps[door] = walked
             for occurrence in walked:
                 detected[occurrence.ident] = occurrence

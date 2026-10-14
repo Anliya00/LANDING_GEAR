@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { BarChart3, LineChart, TrendingUp, RotateCcw, RefreshCw } from 'lucide-react';
 import { PageHeader } from '@/components/PageHeader';
-import { analysisApi, type Meta } from '@/api/analysis';
+import { analysisApi, type FlightRow, type Meta } from '@/api/analysis';
 import { preloadPlotly } from './dashboard/charts';
+import { FlightSelector } from './dashboard/FlightSelector';
 import { PeriodBar, presetPeriod, type Period } from './dashboard/controls';
 import { usePersistedState } from './dashboard/persist';
 import { StatisticsPanel } from './dashboard/StatisticsFold';
@@ -30,6 +31,7 @@ export default function DashboardPage() {
   const [section, setSection] = usePersistedState<Section>('section', 'statistics');
   const [period, setPeriod] = usePersistedState<Period>('period', () => presetPeriod('month1'));
   const [aircraft, setAircraft] = usePersistedState<number | null>('aircraft', null);
+  const [selected, setSelected] = usePersistedState<FlightRow | null>('flight.selected', null);
   const [resetKey, setResetKey] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -48,6 +50,7 @@ export default function DashboardPage() {
       });
     } catch { /* ignore */ }
     setAircraft(null);
+    setSelected(null);
     setPeriod(presetPeriod('month1'));
     setResetKey((prev) => prev + 1);
   };
@@ -113,6 +116,11 @@ export default function DashboardPage() {
         </label>
       </div>
 
+      {section !== 'trend' && (
+        <FlightSelector key={resetKey} aircraft={aircraft} period={period} selected={selected} onSelect={setSelected}
+          hint={section === 'statistics' ? 'none picked: all flights together' : undefined} />
+      )}
+
       <nav className="dash-tabs" role="tablist" aria-label="Dashboard sections">
         {SECTIONS.map((s) => (
           <button
@@ -131,13 +139,13 @@ export default function DashboardPage() {
       </nav>
 
       <div className="dash-panel" role="tabpanel" hidden={section !== 'statistics'}>
-        <StatisticsPanel period={period} aircraft={aircraft} />
+        <StatisticsPanel period={period} aircraft={aircraft} selected={selected} />
       </div>
       <div className="dash-panel" role="tabpanel" hidden={section !== 'timeseries'}>
-        <TimeSeriesPanel key={resetKey} meta={meta} aircraft={aircraft} />
+        <TimeSeriesPanel key={resetKey} meta={meta} selected={selected} />
       </div>
       <div className="dash-panel" role="tabpanel" hidden={section !== 'trend'}>
-        <TrendPanel period={period} />
+        <TrendPanel period={period} aircraft={aircraft} />
       </div>
     </div>
   );

@@ -64,15 +64,26 @@ class Occurrence:
     t: float            # seconds since midnight, midnight-rollover unwrapped
     source_time: str
     occurrence_seq: int | None = None
+    #: `ident` of the anchor occurrence of the cycle this was selected into. The
+    #: anchor points to itself. None exactly when `occurrence_seq` is None.
+    anchor: tuple[EventKey, float] | None = None
 
     @property
     def ident(self) -> tuple[EventKey, float]:
         """Identity used to de-duplicate and to look the row id up later."""
         return (self.key, self.t)
 
-    def selected(self, seq: int) -> "Occurrence":
-        """The same occurrence, promoted into cycle `seq`."""
-        return Occurrence(self.key, self.t, self.source_time, seq)
+    def selected(
+        self, seq: int, anchor: tuple[EventKey, float] | None = None
+    ) -> "Occurrence":
+        """The same occurrence, promoted into cycle `seq`.
+
+        Called on the anchor itself with no `anchor` argument, it points to
+        itself; for any other event of the cycle, pass the anchor's `ident`.
+        """
+        return Occurrence(
+            self.key, self.t, self.source_time, seq, anchor if anchor is not None else self.ident
+        )
 
 
 @dataclass(frozen=True)
@@ -85,6 +96,9 @@ class ParamResult:
     start: Occurrence | None
     end: Occurrence | None
     complete: bool
+    #: `ident` of the anchor of the cycle this value belongs to. Set by the
+    #: orchestrator after the family returns, never by the family itself.
+    anchor: tuple[EventKey, float] | None = None
 
     @property
     def status_text(self) -> str:
@@ -125,6 +139,10 @@ class FamilyOutput:
     event_keys: frozenset[EventKey] = frozenset()
     param_names: frozenset[str] = frozenset()
     warnings: list[str] = field(default_factory=list)
+    #: Gear-cycle families only: cycle number -> `ident` of that cycle's anchor.
+    cycle_anchors: dict[int, tuple[EventKey, float]] = field(default_factory=dict)
+    #: Set by the mass family. Goes to FLIGHTS.INITIAL_FUEL_LOADED_KG, not RESULTS.
+    initial_fuel_kg: float | None = None
 
     @property
     def cycle_count(self) -> int:

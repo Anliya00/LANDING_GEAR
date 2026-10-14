@@ -9,17 +9,30 @@ import { addDays, isoDate, monthName, pad, parseIso, todayIso } from './format';
    --------------------------------------------------------------------------- */
 
 export function Fold({
-  id, title, subtitle, defaultOpen = true, compact = false, children,
+  id, title, subtitle, defaultOpen = true, compact = false, collapsible = false, children,
 }: {
-  /** key under which the open/closed state is remembered */
-  id: string;
+  /** key under which the open/closed state is remembered (collapsible folds only) */
+  id?: string;
   title: React.ReactNode;
   subtitle?: React.ReactNode;
   defaultOpen?: boolean;
   compact?: boolean;
+  /** only the flight selector collapses; every other section is always open */
+  collapsible?: boolean;
   children: React.ReactNode;
 }) {
-  const [open, setOpen] = usePersistedState<boolean>(`fold.${id}`, defaultOpen);
+  const [open, setOpen] = usePersistedState<boolean>(`fold.${id ?? 'x'}`, defaultOpen);
+  if (!collapsible) {
+    return (
+      <section className={`fold fold-flat ${compact ? 'fold-compact' : ''} is-open`}>
+        <header className="fold-head">
+          <span className="fold-title">{title}</span>
+          {subtitle && <span className="fold-sub">{subtitle}</span>}
+        </header>
+        <div className="fold-body">{children}</div>
+      </section>
+    );
+  }
   return (
     <section className={`fold ${compact ? 'fold-compact' : ''} ${open ? 'is-open' : ''}`}>
       <button type="button" className="fold-head" onClick={() => setOpen((o) => !o)} aria-expanded={open}>

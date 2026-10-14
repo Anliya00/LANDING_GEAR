@@ -1,13 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
-import { RotateCcw } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { usePersistedState } from './persist';
 import {
-  analysisApi, type CycleResponse, type FlightList, type FlightRow, type LandingResponse,
+  analysisApi, type CycleResponse, type FlightRow, type LandingResponse,
   type Meta, type Panel, type PlotKind, type Trigger, type Value,
 } from '@/api/analysis';
 import { COLORS, SignalStack, type SignalRow } from './charts';
-import { DatePicker, Fold } from './controls';
-import { fmtClock, fmtNum, pad, unitLabel } from './format';
+import { Fold } from './controls';
+import { fmtClock, fmtNum, unitLabel } from './format';
 
 const TABS: { id: PlotKind; label: string }[] = [
   { id: 'retraction', label: 'Retraction cycle' },
@@ -15,7 +14,6 @@ const TABS: { id: PlotKind; label: string }[] = [
   { id: 'landing', label: 'Landing roll' },
 ];
 
-const flightLabel = (n: number | null) => (n === null ? '—' : `F${pad(n, 4)}`);
 
 /** A number box that only commits a value inside [min, max]; resets on blur if not. */
 function BoundedNumber({
@@ -83,6 +81,25 @@ function CyclePanel({ panel, win, trigger, kind }: { panel: Panel; win: { start:
   );
 }
 
+function EventsTable({ rows }: { rows: { group?: string; name: string; t: number | null }[] }) {
+  return (
+    <div className="dash-table-scroll">
+      <table className="dash-table">
+        <thead><tr><th>Event</th><th className="num">Time</th><th>Status</th></tr></thead>
+        <tbody>
+          {rows.map((r, i) => (
+            <tr key={i}>
+              <td>{r.group ? <span className="ev-group">{r.group}</span> : null}{r.name}</td>
+              <td className="num">{r.t === null ? '—' : fmtClock(r.t, 1)}</td>
+              <td>{r.t === null ? <span className="tag tag-bad">Not found</span> : <span className="tag tag-ok">Found</span>}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function CycleView({ data, kind }: { data: CycleResponse; kind: 'retraction' | 'extension' }) {
   return (
     <>
@@ -97,6 +114,10 @@ function CycleView({ data, kind }: { data: CycleResponse; kind: 'retraction' | '
           <ValueCell label="Trigger time" text={fmtClock(data.trigger_time, 1)} />
         </div>
         <Legend items={[['Gear uplock', COLORS.purple], ['Gear downlock', COLORS.blue], ['Door uplock', COLORS.green], ['Door open limit', COLORS.orange]]} />
+      </Fold>
+      <Fold id={`ts.${kind}.events`} title="Detected events" compact
+        subtitle={`${data.panels.reduce((n, p) => n + p.steps.filter((x) => x.t !== null).length, 0)} found`}>
+        <EventsTable rows={data.panels.flatMap((p) => p.steps.map((st) => ({ group: p.door, name: `${st.n} ${st.name}`, t: st.t })))} />
       </Fold>
       {data.panels.map((p) => <CyclePanel key={p.door} panel={p} win={data.window} trigger={data.trigger_time} kind={kind} />)}
     </>
@@ -161,6 +182,13 @@ function LandingView({ data }: { data: LandingResponse }) {
         <Legend items={[['Ground speed', COLORS.blue], ['Wheel speed (dashed)', COLORS.red, true]]}
           note="Landing roll runs from chute select to the 10 kt point" />
       </Fold>
+      <Fold id="ts.landing.events" title="Detected events" compact>
+        <EventsTable rows={[
+          { name: 'Touchdown (wheel spin-up)', t: data.touchdown },
+          { name: 'Chute selected', t: data.chute_select },
+          { name: 'Wheel speed reaches 10 kt', t: data.ten_kt },
+        ]} />
+      </Fold>
       <Fold id="ts.landing.plot" title="Landing roll signals" compact>
         <SignalStack rows={rows} xMin={data.window.start} xMax={data.window.end} markers={markers} labelWidth={120} />
       </Fold>
@@ -172,14 +200,7 @@ function LandingView({ data }: { data: LandingResponse }) {
    The fold
    --------------------------------------------------------------------------- */
 
-export function TimeSeriesPanel({ meta, aircraft }: { meta: Meta | null; aircraft: number | null }) {
-  const [date, setDate] = usePersistedState<string | null>('ts.date', null);
-  const [fnText, setFnText] = usePersistedState<string>('ts.flightNumber', '');
-  const [list, setList] = useState<FlightList>({ flights: [], dates: [], flight_numbers: [] });
-  const [listError, setListError] = useState<string | null>(null);
-  const [listLoaded, setListLoaded] = useState(false);
-  const [selected, setSelected] = usePersistedState<FlightRow | null>('ts.selected', null);
-
+export function TimeSeriesPanel({ meta, selected }: { meta: Meta | null; selected: FlightRow | null }) {
   const [tab, setTab] = usePersistedState<PlotKind>('ts.tab', 'retraction');
   const [triggers, setTriggers] = useState<Trigger[]>([]);
   const [seqs, setSeqs] = usePersistedState<Record<string, number>>('ts.seq', {});
@@ -197,24 +218,6 @@ export function TimeSeriesPanel({ meta, aircraft }: { meta: Meta | null; aircraf
   const after = windows[tab]?.after ?? limits?.after.default ?? null;
   const setBefore = (v: number) => setWindows((w) => ({ ...w, [tab]: { before: v, after: after ?? v } }));
   const setAfter = (v: number) => setWindows((w) => ({ ...w, [tab]: { before: before ?? v, after: v } }));
-  const flightNumber = /^\d+$/.test(fnText.trim()) ? Number(fnText.trim()) : null;
-
-  // flight list: refetch whenever a filter changes
-  useEffect(() => {
-    let live = true;
-    const timer = setTimeout(() => {
-      analysisApi.flights({ aircraft, date, flight_number: flightNumber })
-        .then((r) => { if (live) { setList(r); setListError(null); setListLoaded(true); } })
-        .catch((e) => { if (live) setListError(e.message || 'Could not load flights'); });
-    }, 150);
-    return () => { live = false; clearTimeout(timer); };
-  }, [aircraft, date, flightNumber]);
-
-  // keep the selection only while it is still in the list
-  useEffect(() => {
-    if (listLoaded && selected && !list.flights.some((f) => f.flight_id === selected.flight_id)) setSelected(null);
-  }, [list, selected, listLoaded, setSelected]);
-
   // triggers for the chosen flight + tab
   useEffect(() => {
     setCycle(null); setLanding(null); setPlotError(null);
@@ -243,74 +246,24 @@ export function TimeSeriesPanel({ meta, aircraft }: { meta: Meta | null; aircraf
     return () => { live = false; clearTimeout(timer); };
   }, [selected, tab, seq, before, after]);
 
-  const reset = () => { setDate(null); setFnText(''); };
   const triggerLabel = (t: Trigger) => {
     const when = t.time === null ? '—' : fmtClock(t.time);
     if (tab === 'landing') return `${when} - ${t.complete ? 'Chute selected' : 'No chute selected'}`;
     return `${when} - ${t.complete ? 'Complete' : 'Incomplete'}`;
   };
 
-  const flightNumbers = useMemo(() => list.flight_numbers, [list.flight_numbers]);
-
   return (
     <>
-      <Fold id="ts.select" title="Select flight"
-        subtitle={selected ? `${flightLabel(selected.flight_number)} · AC${selected.aircraft_number} · ${selected.date}` : `${list.flights.length} flights match`}>
-        <div className="dash-toolbar">
-          <span className="dash-field">
-            <span className="dash-label">Date</span>
-            <DatePicker value={date} available={list.dates} onChange={setDate} />
-          </span>
-          <label className="dash-field">
-            <span className="dash-label">Flight number</span>
-            <input list="flight-numbers" className="fn-input" placeholder="Type or pick" value={fnText}
-              inputMode="numeric" onChange={(e) => setFnText(e.target.value)} />
-            <datalist id="flight-numbers">
-              {flightNumbers.map((n) => <option key={n} value={n}>{flightLabel(n)}</option>)}
-            </datalist>
-          </label>
-          <button type="button" className="chip" onClick={reset}><RotateCcw size={14} /> Reset filters</button>
-          {selected && (
-            <button type="button" className="chip" onClick={() => setSelected(null)} title="Clear selected flight plot">
-              <RotateCcw size={14} /> Clear plot
-            </button>
-          )}
-          <span className="dash-grow" />
-          <span className="dash-count"><b>{list.flights.length}</b> flights match{aircraft ? ` AC${aircraft}` : ''}</span>
-        </div>
-
-        {listError && <div className="dash-error" role="alert">{listError}</div>}
-
-        <div className="flight-list" role="listbox" aria-label="Matching flights">
-          <div className="flight-row flight-head">
-            <span>Flight</span><span>Aircraft</span><span>Date</span><span>Start</span>
-          </div>
-          <div className="flight-scroll">
-            {list.flights.length === 0 && <div className="flight-empty">No flights match these filters.</div>}
-            {list.flights.map((f) => (
-              <button key={f.flight_id} type="button" role="option" aria-selected={selected?.flight_id === f.flight_id}
-                className={`flight-row ${selected?.flight_id === f.flight_id ? 'is-sel' : ''}`}
-                onClick={() => setSelected(f)}>
-                <span>{flightLabel(f.flight_number)}</span>
-                <span>{f.aircraft_number !== null ? `AC${f.aircraft_number}` : '—'}</span>
-                <span>{f.date ?? '—'}</span>
-                <span>{f.start ?? '—'}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      </Fold>
-
       {!selected ? (
-        <div className="dash-hint">Pick a flight from the list to see its plots.</div>
+        <div className="dash-hint">Pick a flight in the selector above to see its plots.</div>
       ) : (
         <>
           <Fold id="ts.settings" title="Plot settings"
             subtitle={TABS.find((t) => t.id === tab)?.label}>
-            <div className="tabs" role="tablist">
+            <div className="seg" role="tablist">
               {TABS.map((t) => (
                 <button key={t.id} type="button" role="tab" aria-selected={tab === t.id}
-                  className={`chip ${tab === t.id ? 'is-on' : ''}`} onClick={() => setTab(t.id)}>{t.label}</button>
+                  className={`seg-btn ${tab === t.id ? 'is-on' : ''}`} onClick={() => setTab(t.id)}>{t.label}</button>
               ))}
             </div>
             <div className="dash-toolbar">

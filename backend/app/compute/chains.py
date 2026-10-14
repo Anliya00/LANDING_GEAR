@@ -90,6 +90,7 @@ def walk(
     chain: list[EventKey],
     window: Window,
     occurrence_seq: int,
+    anchor: tuple[EventKey, float] | None = None,
 ) -> list[Occurrence]:
     """Walk one chain inside one window.
 
@@ -110,7 +111,9 @@ def walk(
         if hit is None:
             break
         t, raw = hit
-        found.append(Occurrence(key=key, t=t, source_time=raw, occurrence_seq=occurrence_seq))
+        found.append(
+            Occurrence(key=key, t=t, source_time=raw, occurrence_seq=occurrence_seq, anchor=anchor)
+        )
         cursor = t
 
     return found

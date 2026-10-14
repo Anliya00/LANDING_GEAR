@@ -13,6 +13,7 @@ families are configured.
 from __future__ import annotations
 
 import logging
+from dataclasses import replace
 from pathlib import Path
 
 from app.compute import phases as phase_layer
@@ -82,12 +83,38 @@ class FlightRun:
         )
 
 
+def _attach_anchors(module, output: FamilyOutput, phases: phase_layer.FlightPhases) -> FamilyOutput:
+    """Tell every result which anchor row its cycle hangs on (D8).
+
+    A gear-cycle family records its anchors itself. The phase-based families
+    number take-offs and landings 1, 2, 3... in time order, so occurrence_seq n
+    is the n-th take-off or the n-th landing; which of the two a parameter
+    belongs to is declared by the family in TAKEOFF_PARAMS.
+    """
+    takeoff_params = getattr(module, "TAKEOFF_PARAMS", frozenset())
+    take_off_anchor = {t.seq: t.anchor.ident for t in phases.take_offs}
+    landing_anchor = {l.seq: l.anchor.ident for l in phases.landings}
+
+    results = []
+    for r in output.results:
+        if output.cycle_anchors:
+            anchor = output.cycle_anchors.get(r.occurrence_seq)
+        elif r.param_name in takeoff_params:
+            anchor = take_off_anchor.get(r.occurrence_seq)
+        else:
+            anchor = landing_anchor.get(r.occurrence_seq)
+        results.append(replace(r, anchor=anchor))
+    output.results = results
+    return output
+
+
 def compute_family(family: str, run: FlightRun) -> FamilyOutput:
     """Run one family over an already-opened flight."""
     module = registry.get(family)
     run.signals.require_files(set(module.SOURCE_FILES))
     phases = run.phases if getattr(module, "NEEDS_PHASES", True) else phase_layer.FlightPhases()
     output = module.compute(run.signals, run.context, phases)
+    output = _attach_anchors(module, output, phases)
     log.info("%s", output.summary())
     for note in output.warnings:
         log.debug("  %s", note)

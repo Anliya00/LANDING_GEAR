@@ -104,9 +104,9 @@ function qs(params: Record<string, string | number | null | undefined>): string 
 
 export const analysisApi = {
   meta: () => api.get<Meta>('/analysis/meta'),
-  stats: (from?: string | null, to?: string | null, aircraft?: number | null) =>
-    api.get<StatsResponse>(`/analysis/stats${qs({ from, to, aircraft })}`),
-  flights: (f: { aircraft?: number | null; flight_number?: number | null; date?: string | null }) =>
+  stats: (from?: string | null, to?: string | null, aircraft?: number | null, flight_id?: number | null) =>
+    api.get<StatsResponse>(`/analysis/stats${qs({ from, to, aircraft, flight_id })}`),
+  flights: (f: { aircraft?: number | null; flight_number?: number | null; date?: string | null; from?: string | null; to?: string | null }) =>
     api.get<FlightList>(`/analysis/flights${qs(f)}`),
   triggers: (flightId: number, kind: PlotKind) =>
     api.get<TriggerList>(`/analysis/flights/${flightId}/triggers${qs({ kind })}`),
@@ -114,6 +114,6 @@ export const analysisApi = {
     api.get<CycleResponse>(`/analysis/flights/${flightId}/cycle${qs({ kind, seq, before, after })}`),
   landing: (flightId: number, seq: number, before: number, after: number) =>
     api.get<LandingResponse>(`/analysis/flights/${flightId}/landing${qs({ seq, before, after })}`),
-  trend: (view: TrendView, group: TrendGroup, from?: string | null, to?: string | null) =>
-    api.get<TrendResponse>(`/analysis/trend${qs({ view, group, from, to })}`),
+  trend: (view: TrendView, group: TrendGroup, from?: string | null, to?: string | null, aircraft?: number | null) =>
+    api.get<TrendResponse>(`/analysis/trend${qs({ view, group, from, to, aircraft })}`),
 };

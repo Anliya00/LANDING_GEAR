@@ -40,19 +40,22 @@ FUEL_COLUMN = "remn_ff"
 #: The normal sample interval is 0.16 s, so 10 s is generous.
 MAX_FUEL_GAP_S = 10.0
 
-INITIAL_FUEL_LOADED = "INITIAL_FUEL_LOADED"
 TAKEOFF_FUEL_USED = "TAKEOFF_FUEL_USED"
 LANDING_FUEL_USED = "LANDING_FUEL_USED"
 AC_TAKEOFF_MASS = "AC_TAKEOFF_MASS"
 AC_LANDING_MASS = "AC_LANDING_MASS"
 
 PARAM_NAMES = frozenset(
-    {INITIAL_FUEL_LOADED, TAKEOFF_FUEL_USED, LANDING_FUEL_USED,
+    {TAKEOFF_FUEL_USED, LANDING_FUEL_USED,
      AC_TAKEOFF_MASS, AC_LANDING_MASS}
 )
 
+#: Parameters that belong to a take-off anchor; the rest belong to a landing.
+#: INITIAL_FUEL_LOADED is not a parameter: the first REMN_FF reading is stored on
+#: FLIGHTS.INITIAL_FUEL_LOADED_KG, once per flight, by the results writer.
+TAKEOFF_PARAMS = frozenset({TAKEOFF_FUEL_USED, AC_TAKEOFF_MASS})
+
 PARAM_DEFINITIONS: dict[str, tuple[str, str]] = {
-    INITIAL_FUEL_LOADED: ("kg", "First REMN_FF reading of the flight"),
     TAKEOFF_FUEL_USED: ("kg", "Initial fuel loaded minus REMN_FF at lift-off"),
     LANDING_FUEL_USED: ("kg", "Initial fuel loaded minus REMN_FF at the landing anchor"),
     AC_TAKEOFF_MASS: ("kg", "Aircraft initial mass minus take-off fuel used"),
@@ -87,10 +90,8 @@ def compute(
             "AC_TAKEOFF_MASS and AC_LANDING_MASS cannot be"
         )
 
-    # One per flight. Carries occurrence_seq 1 so it has a home in RESULTS.
-    out.results.append(
-        ParamResult(INITIAL_FUEL_LOADED, initial_fuel, 1, None, None, complete=True)
-    )
+    # One per flight, stored on the FLIGHTS row rather than as a result.
+    out.initial_fuel_kg = initial_fuel
 
     for take_off in phases.take_offs:
         _mass_at(

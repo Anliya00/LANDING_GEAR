@@ -22,6 +22,9 @@ MAX_NZ_TAKEOFF = "MAX_NZ_TAKEOFF_ROLL"
 MAX_NZ_LANDING = "MAX_NZ_LANDING_ROLL"
 
 PARAM_NAMES = frozenset({MAX_NZ_TAKEOFF, MAX_NZ_LANDING})
+
+#: Parameters that belong to a take-off anchor; the rest belong to a landing.
+TAKEOFF_PARAMS = frozenset({MAX_NZ_TAKEOFF})
 EVENT_KEYS: frozenset[EventKey] = frozenset()
 #: Whether this family needs the take-off/landing pass.
 NEEDS_PHASES = True

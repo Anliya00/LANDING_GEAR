@@ -85,12 +85,10 @@ def explain(derived: Path, initial_mass: float | None) -> int:
     output = orchestrator.compute_family("mass", run)
     print(f"\n{RULE}\nMASS — fuel used is the first REMN_FF minus the reading at the event\n{RULE}")
     times, values, raw = signals.series(mass.FUEL_FILE, mass.FUEL_COLUMN)
-    print(f"  REMN_FF first sample   {raw[0]}  = {values[0]:.0f} kg   <- INITIAL_FUEL_LOADED")
+    print(f"  REMN_FF first sample   {raw[0]}  = {values[0]:.0f} kg   <- stored in FLIGHTS.INITIAL_FUEL_LOADED_KG")
     print(f"  REMN_FF last sample    {raw[-1]}  = {values[-1]:.0f} kg")
     print(f"  aircraft initial mass  {initial_mass} kg (from AIRCRAFTS)")
     for result in output.results:
-        if result.param_name == mass.INITIAL_FUEL_LOADED:
-            continue
         if result.value is None:
             print(f"\n  {result.param_name:<24} INCOMPLETE")
             continue

@@ -110,7 +110,8 @@ def count_flights(
 # ---------------------------------------------------------------------------
 
 def statistics(
-    conn: oracledb.Connection, date_from, date_to, aircraft_number: int | None = None
+    conn: oracledb.Connection, date_from, date_to, aircraft_number: int | None = None,
+    flight_id: int | None = None,
 ) -> list[dict[str, Any]]:
     """Average / min / max / flight count per parameter over the period.
 
@@ -123,6 +124,10 @@ def statistics(
     if aircraft_number is not None:
         ac = " AND f.AIRCRAFT_ID IN (SELECT AIRCRAFT_ID FROM AIRCRAFTS WHERE AIRCRAFT_NUMBER = :ac)"
         binds["ac"] = aircraft_number
+    if flight_id is not None:
+        # one flight: its own values, min = avg = max
+        ac += " AND f.FLIGHT_ID = :fid"
+        binds["fid"] = flight_id
     cur = conn.cursor()
     cur.execute(
         f"""
@@ -172,6 +177,8 @@ def list_flights(
     aircraft_number: int | None,
     flight_number: int | None,
     on_date: dt.date | None,
+    date_from: dt.date | None = None,
+    date_to: dt.date | None = None,
 ) -> dict[str, Any]:
     """Matching flights, newest first, plus the dates that have data.
 
@@ -186,6 +193,11 @@ def list_flights(
     if flight_number is not None:
         where.append("f.FLIGHT_NUMBER = :fn")
         binds["fn"] = flight_number
+    if date_from is not None or date_to is not None:
+        # the dashboard-wide period applies to the picker too
+        p_lo, p_hi = _day_bounds(date_from, date_to)
+        where.append("f.FLIGHT_DATE_TIME >= :plo AND f.FLIGHT_DATE_TIME < :phi")
+        binds.update(plo=p_lo, phi=p_hi)
     base_where = " AND ".join(where)
 
     cur = conn.cursor()
@@ -360,13 +372,20 @@ def results_for(
 # ---------------------------------------------------------------------------
 
 def trend_rows(
-    conn: oracledb.Connection, param_names: list[str], date_from, date_to
+    conn: oracledb.Connection, param_names: list[str], date_from, date_to,
+    aircraft_number: int | None = None,
 ) -> list[dict[str, Any]]:
     """One row per COMPLETE result in the period: (param, flight date, value)."""
     lo, hi = _day_bounds(date_from, date_to)
     marks = ",".join(f":p{i}" for i in range(len(param_names)))
     binds: dict[str, Any] = {f"p{i}": n.lower() for i, n in enumerate(param_names)}
     binds.update(lo=lo, hi=hi, ok=STATUS_COMPLETE)
+    aircraft_sql = ""
+    if aircraft_number is not None:
+        aircraft_sql = (
+            " AND f.AIRCRAFT_ID IN (SELECT AIRCRAFT_ID FROM AIRCRAFTS WHERE AIRCRAFT_NUMBER = :ac)"
+        )
+        binds["ac"] = aircraft_number
     cur = conn.cursor()
     cur.execute(
         f"""
@@ -377,7 +396,7 @@ def trend_rows(
           JOIN FLIGHTS f ON f.FLIGHT_ID = r.FLIGHT_ID
          WHERE LOWER(p.PARAM_NAME) IN ({marks})
            AND r.STATUS = :ok AND r.PARAM_VAL IS NOT NULL
-           AND f.FLIGHT_DATE_TIME >= :lo AND f.FLIGHT_DATE_TIME < :hi
+           AND f.FLIGHT_DATE_TIME >= :lo AND f.FLIGHT_DATE_TIME < :hi{aircraft_sql}
          ORDER BY f.FLIGHT_DATE_TIME
         """,
         binds,

@@ -238,7 +238,7 @@ def _find_take_offs(signals: FlightSignals, phases: FlightPhases) -> None:
             TakeOff(
                 seq,
                 anchor.selected(seq),
-                Occurrence(WHEEL_SPEED_ROLL_START, roll_t, roll_raw, seq),
+                Occurrence(WHEEL_SPEED_ROLL_START, roll_t, roll_raw, seq, anchor.ident),
             )
         )
 
@@ -339,7 +339,9 @@ def _find_landings(signals: FlightSignals, phases: FlightPhases) -> None:
             landing = Landing(
                 seq=seq,
                 anchor=anchor.selected(seq),
-                decay=Occurrence(WHEEL_SPEED_DECAY, decay_t, decay_raw[decay_t], seq),
+                decay=Occurrence(
+                    WHEEL_SPEED_DECAY, decay_t, decay_raw[decay_t], seq, anchor.ident
+                ),
             )
             _attach_touchdown(landing, members, seq)
             _attach_chute(signals, landing, seq, phases)
@@ -355,7 +357,7 @@ def _attach_touchdown(landing: Landing, members: list[Occurrence], seq: int) -> 
     """
     wheel = [o for o in members if o.key in (WHEEL_SPEED_LH_SPINUP, WHEEL_SPEED_RH_SPINUP)]
     if wheel:
-        landing.touchdown = wheel[0].selected(seq)
+        landing.touchdown = wheel[0].selected(seq, landing.anchor.ident)
 
 
 def _attach_chute(
@@ -374,5 +376,5 @@ def _attach_chute(
             "landing-roll parameters cannot be computed"
         )
         return
-    landing.chute = inside[0].selected(seq)
+    landing.chute = inside[0].selected(seq, landing.anchor.ident)
     phases.unselected.extend(inside[1:])
