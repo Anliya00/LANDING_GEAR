@@ -2,10 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { RotateCcw } from 'lucide-react';
 import { analysisApi, type FlightList, type FlightRow } from '@/api/analysis';
 import { DatePicker, Fold, periodRange, type Period } from './controls';
-import { pad } from './format';
 import { usePersistedState } from './persist';
 
-const flightLabel = (n: number | null) => (n === null ? '—' : `F${pad(n, 4)}`);
+const flightLabel = (n: number | null) => (n === null ? '—' : String(n));
 
 /**
  * The flight picker, shared by Statistics and Time series. It sits above the

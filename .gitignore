@@ -30,6 +30,8 @@ frontend/dist/
 npm-debug.log*
 yarn-error.log*
 coverage/
+backup/
+backend/migrations/
 
 # package-lock.json is deliberately NOT ignored — it pins transitive
 # dependency versions so another machine builds identically.

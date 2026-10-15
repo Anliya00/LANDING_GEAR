@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { analysisApi, type FlightRow, type StatCard, type StatsResponse } from '@/api/analysis';
 import { Fold, periodRange, type Period } from './controls';
-import { fmtNum, pad, unitLabel } from './format';
+import { fmtNum, unitLabel } from './format';
 import { PARAM_TONE, ParamIcon } from './ParamIcons';
 
 /** Cards show whole numbers for mass and distance, two places for everything else. */
@@ -21,7 +21,7 @@ const GROUPS: { id: string; title: string; sub: string; kinds: string[] }[] = [
   { id: 'landing', title: 'Landing and landing roll', sub: 'Touchdown, chute selection and the roll to 10 kt', kinds: ['mass_down', 'sink', 'chute', 'nx_max', 'nx_avg', 'runway', 'nz_down'] },
 ];
 
-const flightLabel = (n: number | null) => (n === null ? '—' : `F${pad(n, 4)}`);
+const flightLabel = (n: number | null) => (n === null ? '—' : String(n));
 
 function Kpi({ label, value, hint }: { label: string; value: React.ReactNode; hint?: string }) {
   return (

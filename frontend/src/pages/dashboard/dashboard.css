@@ -217,7 +217,11 @@
 
 .dash-filters { display: flex; flex-wrap: nowrap; align-items: stretch; gap: var(--s3); }
 .dash-filters .dash-toolbar { flex: 1 1 auto; min-width: 0; }
-.dash-aircraft { flex: none; }
+.dash-aircraft {
+  flex: none; align-self: stretch;
+  padding: var(--s3) var(--s4);
+  background: var(--bg-sunken); border: 1px solid var(--rule); border-radius: 12px;
+}
 .dash-tabs {
   display: flex;
   gap: var(--s3);
@@ -319,5 +323,5 @@
 
 /* Landing gear cycle and Take-off sit side by side */
 .stat-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s4); align-items: start; }
-.stat-pair .stat-grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
+.stat-pair .stat-grid { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
 @media (max-width: 1000px) { .stat-pair { grid-template-columns: 1fr; } }
