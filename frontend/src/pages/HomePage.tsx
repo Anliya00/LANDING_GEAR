@@ -238,7 +238,7 @@ export default function HomePage() {
                       <button 
                         type="button" 
                         className="home-action-btn"
-                        onClick={() => navigate('/flights')}
+                        onClick={() => navigate(`/flights?flight_id=${f.raw_id}`)}
                       >
                         View
                       </button>

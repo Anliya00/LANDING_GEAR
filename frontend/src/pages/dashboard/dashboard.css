@@ -135,18 +135,18 @@
 /* --- Flight list ------------------------------------------------------------- */
 
 .flight-list { border: 1px solid var(--rule); border-radius: 12px; overflow: hidden; background: var(--bg-raised); }
-.flight-scroll { max-height: 280px; overflow-y: auto; }
+.flight-scroll { max-height: 224px; overflow-y: auto; }
 .flight-row {
   display: grid; grid-template-columns: 1.1fr 1.4fr 1.6fr 1fr; gap: var(--s3);
   width: 100%; padding: 12px var(--s4); border: 0; border-bottom: 1px solid var(--divider);
   background: transparent; color: var(--ink-strong); font: inherit; font-size: var(--text-sm); text-align: left;
   cursor: pointer; font-variant-numeric: tabular-nums;
 }
-.flight-row:hover { background: var(--surface-hover); }
-.flight-row.is-sel { background: var(--accent-soft); color: var(--accent); font-weight: 600; box-shadow: inset 3px 0 0 var(--accent); }
-.flight-head { cursor: default; color: var(--ink-faint); background: var(--bg-sunken); font-weight: 500; position: sticky; top: 0; }
-.flight-head:hover { background: var(--bg-sunken); }
-.flight-empty { padding: var(--s5); text-align: center; color: var(--ink-muted); }
+.flight-list .flight-row:hover { background: var(--surface-hover); }
+.flight-list .flight-row.is-sel { background: var(--accent-soft); color: var(--accent); font-weight: 600; box-shadow: inset 3px 0 0 var(--accent); }
+.flight-list .flight-head { cursor: default; color: var(--ink-faint); background: var(--bg-sunken); font-weight: 500; position: sticky; top: 0; }
+.flight-list .flight-head:hover { background: var(--bg-sunken); }
+.flight-list .flight-empty { padding: var(--s5); text-align: center; color: var(--ink-muted); }
 
 /* --- Cycle + landing panels --------------------------------------------------- */
 
@@ -209,8 +209,8 @@
 
 @media (max-width: 720px) {
   .fold-body { padding: var(--s4); }
-  .flight-row { grid-template-columns: 1fr 1fr; }
-  .flight-head span:nth-child(n+3), .flight-row span:nth-child(n+3) { display: none; }
+  .flight-list .flight-row { grid-template-columns: 1fr 1fr; }
+  .flight-list .flight-head span:nth-child(n+3), .flight-list .flight-row span:nth-child(n+3) { display: none; }
 }
 
 /* --- Filters + section tabs (D6 layout: period and aircraft, then three tabs) --- */
