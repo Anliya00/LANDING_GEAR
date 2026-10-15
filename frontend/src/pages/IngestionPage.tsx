@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { PageHeader } from '@/components/PageHeader';
-import { Folder, Clock, AlertTriangle, CheckCircle, RefreshCw, Search } from 'lucide-react';
+import { Folder, FolderOpen, History, Clock, AlertTriangle, CheckCircle, RefreshCw, Search } from 'lucide-react';
 import './IngestionPage.css';
 import { api } from '@/api/client';
 import { useSession } from '@/auth/guards';
@@ -242,13 +242,15 @@ export default function IngestionPage() {
           className={`tab ${activeTab === 'incoming' ? 'active' : ''}`}
           onClick={() => setActiveTab('incoming')}
         >
-          Incoming Files
+          <FolderOpen size={17} />
+          <span>Incoming Files</span>
         </button>
         <button 
           className={`tab ${activeTab === 'history' ? 'active' : ''}`}
           onClick={() => setActiveTab('history')}
         >
-          Ingestion History
+          <History size={17} />
+          <span>Ingestion History</span>
         </button>
       </div>
 

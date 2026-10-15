@@ -70,30 +70,119 @@ function CyclePanel({ panel, win, trigger, kind }: { panel: Panel; win: { start:
       {!panel.complete && panel.missing && <p className="cycle-missing">{panel.missing}.</p>}
       <SignalStack rows={rows} xMin={win.start} xMax={win.end}
         markers={[{ t: trigger, label: 'Trigger', color: COLORS.slate }]} />
-      <p className="cycle-steps">
-        {panel.steps.map((st) => (
-          <span key={st.n} className={st.t === null ? 'step-missing' : ''}>
-            {st.n} {st.name} {st.t === null ? 'not found' : fmtClock(st.t, 1)}
-          </span>
-        ))}
-      </p>
+      
+      <div className={`cycle-steps-strip door-shade-${panel.door.toLowerCase()}`}>
+        <div className="steps-strip-header">
+          <span className="steps-strip-title">Actuation Sequence Steps</span>
+          <span className="steps-strip-hint">(6-step sequence for {title})</span>
+        </div>
+        <div className="cycle-steps-grid">
+          {panel.steps.map((st) => {
+            const isFound = st.t !== null;
+            return (
+              <div
+                key={st.n}
+                className={`cycle-step-card ${isFound ? 'step-found' : 'step-missing'}`}
+              >
+                <div className="step-pill">
+                  <span className="step-pill-label">Step</span>
+                  <span className="step-pill-num">{st.n}</span>
+                </div>
+                <div className="step-content">
+                  <span className="step-title">{st.name}</span>
+                  <span className="step-time">
+                    {st.t !== null ? fmtClock(st.t, 1) : 'Not found'}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </Fold>
   );
 }
 
-function EventsTable({ rows }: { rows: { group?: string; name: string; t: number | null }[] }) {
+interface EventRowItem {
+  step?: number;
+  group?: string;
+  name: string;
+  t: number | null;
+}
+
+function EventsTable({ rows }: { rows: EventRowItem[] }) {
+  const hasGroup = rows.some((r) => !!r.group);
+  const hasStep = rows.some((r) => r.step !== undefined);
+
   return (
     <div className="dash-table-scroll">
-      <table className="dash-table">
-        <thead><tr><th>Event</th><th className="num">Time</th><th>Status</th></tr></thead>
+      <table className="dash-table events-table">
+        <thead>
+          <tr>
+            {hasStep && (
+              <th style={{ width: '110px' }} title="Chronological sequence step in actuation chain">
+                Step / Seq
+              </th>
+            )}
+            {hasGroup && (
+              <th style={{ width: '130px' }} title="Landing gear assembly location">
+                Assembly
+              </th>
+            )}
+            <th>Event Description</th>
+            <th className="num" style={{ width: '130px' }}>Event Time</th>
+            <th style={{ width: '120px' }}>Status</th>
+          </tr>
+        </thead>
         <tbody>
-          {rows.map((r, i) => (
-            <tr key={i}>
-              <td>{r.group ? <span className="ev-group">{r.group}</span> : null}{r.name}</td>
-              <td className="num">{r.t === null ? '—' : fmtClock(r.t, 1)}</td>
-              <td>{r.t === null ? <span className="tag tag-bad">Not found</span> : <span className="tag tag-ok">Found</span>}</td>
-            </tr>
-          ))}
+          {rows.map((r, i) => {
+            const groupKey = (r.group || '').toUpperCase();
+            let rowShadeClass = '';
+            let groupBadge = null;
+
+            if (groupKey === 'NOSE') {
+              rowShadeClass = 'shade-nose';
+              groupBadge = <span className="assembly-badge badge-nose">NOSE</span>;
+            } else if (groupKey === 'RH') {
+              rowShadeClass = 'shade-rh';
+              groupBadge = <span className="assembly-badge badge-rh">RH MLG</span>;
+            } else if (groupKey === 'LH') {
+              rowShadeClass = 'shade-lh';
+              groupBadge = <span className="assembly-badge badge-lh">LH MLG</span>;
+            } else if (r.group) {
+              groupBadge = <span className="assembly-badge">{r.group}</span>;
+            }
+
+            return (
+              <tr key={i} className={rowShadeClass}>
+                {hasStep && (
+                  <td>
+                    {r.step !== undefined ? (
+                      <span className="step-tag" title={`Step ${r.step} in actuation sequence`}>
+                        Step {r.step}
+                      </span>
+                    ) : (
+                      '—'
+                    )}
+                  </td>
+                )}
+                {hasGroup && <td>{groupBadge || '—'}</td>}
+                <td className="event-name-cell">
+                  <b>{r.name}</b>
+                </td>
+                <td className="num font-mono">
+                  {r.t === null ? '—' : fmtClock(r.t, 1)}
+                </td>
+                <td>
+                  {r.t === null ? (
+                    <span className="tag tag-bad">Not found</span>
+                  ) : (
+                    <span className="tag tag-ok">Detected</span>
+                  )}
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
@@ -116,8 +205,13 @@ function CycleView({ data, kind }: { data: CycleResponse; kind: 'retraction' | '
         <Legend items={[['Gear uplock', COLORS.purple], ['Gear downlock', COLORS.blue], ['Door uplock', COLORS.green], ['Door open limit', COLORS.orange]]} />
       </Fold>
       <Fold id={`ts.${kind}.events`} title="Detected events" compact
-        subtitle={`${data.panels.reduce((n, p) => n + p.steps.filter((x) => x.t !== null).length, 0)} found`}>
-        <EventsTable rows={data.panels.flatMap((p) => p.steps.map((st) => ({ group: p.door, name: `${st.n} ${st.name}`, t: st.t })))} />
+        subtitle={`${data.panels.reduce((n, p) => n + p.steps.filter((x) => x.t !== null).length, 0)} detected across assemblies`}>
+        <EventsTable rows={data.panels.flatMap((p) => p.steps.map((st) => ({
+          step: st.n,
+          group: p.door,
+          name: st.name,
+          t: st.t,
+        })))} />
       </Fold>
       {data.panels.map((p) => <CyclePanel key={p.door} panel={p} win={data.window} trigger={data.trigger_time} kind={kind} />)}
     </>
@@ -184,9 +278,9 @@ function LandingView({ data }: { data: LandingResponse }) {
       </Fold>
       <Fold id="ts.landing.events" title="Detected events" compact>
         <EventsTable rows={[
-          { name: 'Touchdown (wheel spin-up)', t: data.touchdown },
-          { name: 'Chute selected', t: data.chute_select },
-          { name: 'Wheel speed reaches 10 kt', t: data.ten_kt },
+          { step: 1, name: 'Touchdown (wheel spin-up)', t: data.touchdown },
+          { step: 2, name: 'Chute selected', t: data.chute_select },
+          { step: 3, name: 'Wheel speed reaches 10 kt', t: data.ten_kt },
         ]} />
       </Fold>
       <Fold id="ts.landing.plot" title="Landing roll signals" compact>

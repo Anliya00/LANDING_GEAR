@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useTheme } from '@/theme/ThemeProvider';
 import { fmtClock, fmtNum } from './format';
 
 /** Series colours. Fixed, not theme tokens: a line keeps its meaning in both themes. */
@@ -94,13 +95,27 @@ function PlotlyChart({
   tipRef.current = tip;
   const snapRef = useRef(snapMs);
   snapRef.current = snapMs;
+  const { theme } = useTheme();
 
-  // Re-theme when the operating-system colour scheme flips.
+  // Re-theme when the app theme or OS colour scheme flips.
   useEffect(() => {
-    const mq = window.matchMedia('(prefers-color-scheme: dark)');
     const bump = () => setScheme((n) => n + 1);
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
     mq.addEventListener('change', bump);
-    return () => mq.removeEventListener('change', bump);
+
+    const observer = new MutationObserver((mutations) => {
+      for (const m of mutations) {
+        if (m.type === 'attributes' && m.attributeName === 'data-theme') {
+          bump();
+        }
+      }
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+    return () => {
+      mq.removeEventListener('change', bump);
+      observer.disconnect();
+    };
   }, []);
 
   // Draw when the data or settings change; Plotly.react diffs against what is on screen.
@@ -132,7 +147,7 @@ function PlotlyChart({
     });
     return () => { live = false; };
     // spec is rebuilt only when the parent re-renders (new data or settings), never on hover
-  }, [spec, height, filename, scheme]);
+  }, [spec, height, filename, scheme, theme]);
 
   // Panels start hidden (tabs / closed folds), so Plotly sizes itself when they appear.
   useEffect(() => {

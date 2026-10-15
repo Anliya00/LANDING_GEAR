@@ -12,7 +12,7 @@ export function Sidebar({
   return (
     <aside className={`sidebar${collapsed ? ' is-collapsed' : ''}`}>
       <div className="sidebar-mark">
-        <Plane className="sidebar-mark-icon" size={34} strokeWidth={2} />
+        <Plane className="sidebar-mark-icon" size={30} strokeWidth={2} />
         {!collapsed && (
           <span className="sidebar-mark-text">
             <span className="sidebar-mark-name">SFTAD</span>
@@ -33,7 +33,7 @@ export function Sidebar({
             className={({ isActive }) =>
               `nav-item${isActive ? ' is-active' : ''}`}
           >
-            <item.icon size={22} strokeWidth={1.9} />
+            <item.icon size={21} strokeWidth={1.85} />
             {!collapsed && <span>{item.label}</span>}
           </NavLink>
         ))}
@@ -46,7 +46,7 @@ export function Sidebar({
       <div className="sidebar-foot">
         <button type="button" className="rail-toggle" onClick={onToggle}
                 aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
-          {collapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
+          {collapsed ? <PanelLeftOpen size={19} /> : <PanelLeftClose size={19} />}
           {!collapsed && <span>Collapse</span>}
         </button>
 

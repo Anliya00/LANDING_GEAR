@@ -157,17 +157,18 @@ export function FlightTable({
     return filteredFlights.slice(start, start + pageSize);
   }, [filteredFlights, safePage, pageSize]);
 
-  // Status badge matching IngestionPage
+  // Status badge matching exact status from database flight_status column
   const renderStatusBadge = (rawStatus: string) => {
     const s = (rawStatus || '').toUpperCase();
+    let badgeClass = 'badge-pending';
     if (s.includes('COMPLETE')) {
-      return <span className="status-badge badge-complete">Completed</span>;
+      badgeClass = 'badge-complete';
     } else if (s.includes('ANALYSING') || s.includes('UPLOADING') || s.includes('PROGRESS')) {
-      return <span className="status-badge badge-processing">In Progress</span>;
+      badgeClass = 'badge-processing';
     } else if (s.includes('FAILED') || s.includes('ERROR') || s.includes('WARN')) {
-      return <span className="status-badge badge-failed">Failed</span>;
+      badgeClass = 'badge-failed';
     }
-    return <span className="status-badge badge-pending">Pending</span>;
+    return <span className={`status-badge ${badgeClass}`}>{rawStatus || 'UNKNOWN'}</span>;
   };
 
   const formatDuration = (start?: string | null, end?: string | null) => {

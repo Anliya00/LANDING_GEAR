@@ -1469,3 +1469,76 @@
 .btn-open-dashboard:hover {
   background: var(--accent-hover);
 }
+
+/* ---------------------------------------------------------------------------
+   Print & PDF Media Styles
+   --------------------------------------------------------------------------- */
+@media print {
+  @page {
+    margin: 12mm 10mm;
+    size: portrait;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  .sidebar,
+  .top-bar,
+  .flights-split-left,
+  .summary-nav-bar,
+  .summary-tabs-bar,
+  .tab-filter-bar,
+  .timeline-expand-btn,
+  .signals-toggles,
+  .subtab-banner,
+  .btn-export {
+    display: none !important;
+  }
+
+  .flights-page,
+  .flights-split-container,
+  .flights-split-right,
+  .flight-summary-pane {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+  }
+
+  .summary-hero-banner {
+    background: #f1f5f9 !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #000 !important;
+    page-break-after: avoid;
+  }
+
+  .summary-hero-title,
+  .summary-hero-meta b {
+    color: #000 !important;
+  }
+
+  .flight-kpi-card,
+  .flight-timeline-card,
+  .flight-signals-card,
+  .quality-card {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+  }
+
+  .flight-detail-table th,
+  .flight-detail-table td {
+    border: 1px solid #cbd5e1 !important;
+    color: #000 !important;
+  }
+
+  .flight-detail-table thead tr {
+    background: #f1f5f9 !important;
+  }
+}

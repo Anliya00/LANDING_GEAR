@@ -44,7 +44,9 @@ export default function LoginPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const destination = (location.state as LocationState | null)?.from ?? '/flights';
+  const params = new URLSearchParams(location.search);
+  const nextParam = params.get('next');
+  const destination = (location.state as LocationState | null)?.from ?? (nextParam && nextParam.startsWith('/') ? nextParam : '/');
 
   useEffect(() => {
     if (status === 'ready' && user) {

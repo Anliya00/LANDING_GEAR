@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { 
   Download, CheckCircle2, ChevronDown, 
-  FileSpreadsheet, FileCode, Printer, Search, Database, Activity, ShieldCheck
+  FileSpreadsheet, FileCode, FileText, Printer, Search, Database, Activity, ShieldCheck
 } from 'lucide-react';
 import type { FlightRow, FlightSummaryResponse } from '@/api/flights';
+import { downloadFlightPdf, printFlightReportHtml } from './flightPdfExport';
 import { FlightKpiGrid } from './FlightKpiGrid';
 import { FlightTimelineBar } from './FlightTimelineBar';
 import { FlightSignalsPlot } from './FlightSignalsPlot';
@@ -66,8 +67,13 @@ export function FlightSummaryPane({
     setShowExportMenu(false);
   };
 
+  const handleDownloadPdf = () => {
+    downloadFlightPdf(summary);
+    setShowExportMenu(false);
+  };
+
   const handlePrint = () => {
-    window.print();
+    printFlightReportHtml(summary);
     setShowExportMenu(false);
   };
 
@@ -124,17 +130,21 @@ export function FlightSummaryPane({
 
             {showExportMenu && (
               <div className="export-dropdown-menu">
-                <button type="button" onClick={handleExportJson} className="export-menu-item">
-                  <FileCode size={16} />
-                  <span>Export JSON</span>
+                <button type="button" onClick={handleDownloadPdf} className="export-menu-item">
+                  <FileText size={16} />
+                  <span>Download PDF Report</span>
+                </button>
+                <button type="button" onClick={handlePrint} className="export-menu-item">
+                  <Printer size={16} />
+                  <span>Print / PDF View</span>
                 </button>
                 <button type="button" onClick={handleExportCsv} className="export-menu-item">
                   <FileSpreadsheet size={16} />
                   <span>Export CSV (Parameters)</span>
                 </button>
-                <button type="button" onClick={handlePrint} className="export-menu-item">
-                  <Printer size={16} />
-                  <span>Print / PDF View</span>
+                <button type="button" onClick={handleExportJson} className="export-menu-item">
+                  <FileCode size={16} />
+                  <span>Export JSON</span>
                 </button>
               </div>
             )}

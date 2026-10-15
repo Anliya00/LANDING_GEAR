@@ -322,7 +322,7 @@ export default function UsersPage() {
       {/* 1. Page Header with Banner */}
       <PageHeader
         title="User &amp; Role Administration"
-        description="Manage user accounts from the Oracle database, assign roles, and configure page access entitlements."
+        description="Manage user accounts, assign roles, and configure page access entitlements."
         banner={true}
       />
 
@@ -339,7 +339,7 @@ export default function UsersPage() {
             </div>
           </div>
           <div className="user-stat-footer">
-            <span>Configured in Oracle DB</span>
+            <span>Configured in DB</span>
           </div>
         </div>
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { BarChart3, LineChart, TrendingUp, RotateCcw, RefreshCw } from 'lucide-react';
+import { BarChart3, LineChart, TrendingUp, RefreshCw } from 'lucide-react';
 import { PageHeader } from '@/components/PageHeader';
 import { analysisApi, type FlightRow, type Meta } from '@/api/analysis';
 import { preloadPlotly } from './dashboard/charts';
@@ -41,7 +41,8 @@ export default function DashboardPage() {
     analysisApi.meta().then(setMeta).catch((e) => setError(e.message || 'Could not reach the analysis service'));
   }, []);
 
-  const handleResetPlots = () => {
+  const handleRefresh = async () => {
+    setRefreshing(true);
     try {
       Object.keys(localStorage).forEach((k) => {
         if (k.startsWith('sftad.dashboard.')) {
@@ -53,10 +54,7 @@ export default function DashboardPage() {
     setSelected(null);
     setPeriod(presetPeriod('month1'));
     setResetKey((prev) => prev + 1);
-  };
 
-  const handleRefresh = async () => {
-    setRefreshing(true);
     try {
       const data = await analysisApi.meta();
       setMeta(data);
@@ -80,27 +78,16 @@ export default function DashboardPage() {
         }
         banner={true}
         actions={
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <button
-              type="button"
-              className="btn-secondary"
-              onClick={handleResetPlots}
-              title="Reset all filters and clear plotted curves"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
-            >
-              <RotateCcw size={16} /> Reset Plots
-            </button>
-            <button
-              type="button"
-              className="btn-secondary"
-              onClick={handleRefresh}
-              disabled={refreshing}
-              title="Reload metadata and refresh analysis data"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
-            >
-              <RefreshCw size={16} className={refreshing ? 'spin' : ''} /> Refresh
-            </button>
-          </div>
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={handleRefresh}
+            disabled={refreshing}
+            title="Refresh dashboard, reload metadata, and reset plotted curves"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+          >
+            <RefreshCw size={16} className={refreshing ? 'spin' : ''} /> Refresh
+          </button>
         }
       />
       {error && <div className="dash-error" role="alert">{error}</div>}

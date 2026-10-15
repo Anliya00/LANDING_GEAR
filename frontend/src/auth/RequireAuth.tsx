@@ -24,7 +24,7 @@ export function RequireAuth({
   }
 
   if (roles && !hasAnyRole(user.roles, roles)) {
-    return <Navigate to="/flights" replace />;
+    return <Navigate to="/" replace />;
   }
 
   return <>{children}</>;

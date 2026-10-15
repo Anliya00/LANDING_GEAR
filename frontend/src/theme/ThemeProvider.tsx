@@ -1,7 +1,7 @@
 import {
   createContext,
   useContext,
-  useEffect,
+  useLayoutEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -30,12 +30,36 @@ function initialTheme(): Theme {
     : 'light';
 }
 
-export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>(initialTheme);
+function applyThemeToDom(t: Theme) {
+  if (typeof document !== 'undefined') {
+    document.documentElement.setAttribute('data-theme', t);
+    document.documentElement.style.colorScheme = t;
+  }
+}
 
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-    document.documentElement.style.colorScheme = theme;
+// Initial synchronous application before components mount
+if (typeof document !== 'undefined') {
+  applyThemeToDom(initialTheme());
+}
+
+export function ThemeProvider({ children }: { children: ReactNode }) {
+  const [theme, setThemeState] = useState<Theme>(initialTheme);
+
+  const setTheme = (next: Theme | ((prev: Theme) => Theme)) => {
+    setThemeState((prev) => {
+      const resolved = typeof next === 'function' ? next(prev) : next;
+      applyThemeToDom(resolved);
+      try {
+        localStorage.setItem(STORAGE_KEY, resolved);
+      } catch {
+        /* non-fatal */
+      }
+      return resolved;
+    });
+  };
+
+  useLayoutEffect(() => {
+    applyThemeToDom(theme);
     try {
       localStorage.setItem(STORAGE_KEY, theme);
     } catch {

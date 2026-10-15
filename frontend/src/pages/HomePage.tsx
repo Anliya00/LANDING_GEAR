@@ -68,20 +68,15 @@ export default function HomePage() {
         const mapped: RealFlightItem[] = dbFlights.map(f => {
           const rawStatus = (f.status || '').toUpperCase();
           let badgeType: RealFlightItem['badgeType'] = 'pending';
-          let displayStatus = rawStatus || 'PENDING';
 
           if (rawStatus.includes('COMPLETE')) {
             badgeType = 'completed';
-            displayStatus = 'Completed';
           } else if (rawStatus.includes('UPLOADING') || rawStatus.includes('ANALYSING') || rawStatus.includes('PROGRESS')) {
             badgeType = 'progress';
-            displayStatus = 'Analysis in Progress';
           } else if (rawStatus.includes('FAIL') || rawStatus.includes('WARN')) {
             badgeType = 'warning';
-            displayStatus = 'Warning';
           } else {
             badgeType = 'pending';
-            displayStatus = 'Data Pending';
           }
 
           let dateStr = '—';
@@ -101,7 +96,7 @@ export default function HomePage() {
             raw_id: f.flight_id,
             date: dateStr,
             aircraft: acStr,
-            status: displayStatus,
+            status: f.status || 'UNKNOWN',
             badgeType
           };
         });
@@ -212,7 +207,7 @@ export default function HomePage() {
         <div className="home-card">
           <div className="home-card-header">
             <h2>Recent Flights</h2>
-            <Link to="/dashboard" className="home-view-all-link">
+            <Link to="/flights" className="home-view-all-link">
               View All →
             </Link>
           </div>

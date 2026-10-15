@@ -32,9 +32,9 @@
   flex: none;
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 13px;
   height: var(--shell-mark);
-  padding: 0 20px;
+  padding: 0 18px;
   border-bottom: 1px solid var(--shell-border);
   overflow: hidden;
 }
@@ -42,20 +42,20 @@
 .sidebar-mark-text {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
   min-width: 0;
   line-height: 1.2;
 }
 .sidebar-mark-name {
-  font-size: var(--text-2xl);
-  font-weight: 700;
+  font-size: 24px;
+  font-weight: 750;
   letter-spacing: 0.01em;
   color: var(--ink-strong);
 }
 /* The subtitle is a single line by design — a wrapped masthead reads as a
    layout failure rather than as two lines of title. */
 .sidebar-mark-sub {
-  font-size: var(--text-sm);
+  font-size: 13px;
   color: var(--ink-muted);
   white-space: nowrap;
   overflow: hidden;
@@ -68,15 +68,15 @@
   flex: 0 1 auto;
   min-height: 0;
   overflow-y: auto;
-  padding: var(--s4) var(--s3);
+  padding: 14px 12px;
   display: flex;
   flex-direction: column;
-  gap: var(--s2);
+  gap: 6px;
 }
 
 .nav-label {
-  margin: 0 0 var(--s2) var(--s3);
-  font-size: var(--text-xs);
+  margin: 0 0 6px 12px;
+  font-size: 12px;
   font-weight: 650;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -86,11 +86,11 @@
 .nav-item {
   display: flex;
   align-items: center;
-  gap: var(--s3);
-  height: 46px;
-  padding: 0 var(--s4);
+  gap: 12px;
+  height: 42px;
+  padding: 0 14px;
   border-radius: 9px;
-  font-size: var(--text-md);
+  font-size: 15px;
   font-weight: 500;
   color: var(--nav-fg);
   text-decoration: none;
@@ -136,10 +136,10 @@
 /* Short windows: tighten the footer so the logos always stay visible. */
 @media (max-height: 760px) {
   .rail-toggle { height: 36px; }
-  .sidebar-orgs { padding: var(--s2) var(--s3) var(--s1, 4px); }
-  .sidebar-orgs img.logo-cdac { height: 26px; }
-  .sidebar-orgs img.logo-hal  { height: 24px; }
-  .sidebar-version { padding-bottom: var(--s2); }
+  .sidebar-orgs { padding: 10px 12px 4px; }
+  .sidebar-orgs img.logo-cdac { height: 24px; }
+  .sidebar-orgs img.logo-hal  { height: 22px; }
+  .sidebar-version { padding-bottom: 8px; }
 }
 
 .sidebar-foot { flex: none; border-top: 1px solid var(--shell-border); }
@@ -147,11 +147,11 @@
 .rail-toggle {
   display: flex;
   align-items: center;
-  gap: var(--s3);
+  gap: 12px;
   width: 100%;
-  height: 44px;
-  padding: 0 var(--s4);
-  font-size: var(--text-sm);
+  height: 40px;
+  padding: 0 14px;
+  font-size: 14px;
   color: var(--ink-muted);
   background: none;
   border: 0;
@@ -164,19 +164,19 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--s3);
-  padding: var(--s4) var(--s3) var(--s2);
+  gap: 14px;
+  padding: 12px 14px 8px;
   border-top: 1px solid var(--shell-border);
 }
-.sidebar-orgs img.logo-cdac { height: 34px; width: auto; display: block; }
-.sidebar-orgs img.logo-hal  { height: 32px; width: auto; display: block; }
+.sidebar-orgs img.logo-cdac { height: 29px; width: auto; display: block; }
+.sidebar-orgs img.logo-hal  { height: 27px; width: auto; display: block; }
 .sidebar-orgs .org-rule {
-  width: 1px; height: 24px; background: var(--shell-border);
+  width: 1px; height: 22px; background: var(--shell-border);
 }
 /* Same reason as login: the CDAC artwork is fixed dark navy and cannot sit
    on a dark surface. HAL's reads on both and gets no plate. */
 [data-theme='dark'] .sidebar-orgs img.logo-cdac {
-  padding: 4px 8px;
+  padding: 4px 7px;
   border-radius: 6px;
   background: #d7dfe8;
 }
@@ -184,9 +184,9 @@
 
 .sidebar-version {
   margin: 0;
-  padding: 0 0 var(--s4);
+  padding: 0 0 12px;
   text-align: center;
-  font-size: var(--text-sm);
+  font-size: 12.5px;
   color: var(--ink-faint);
 }
 

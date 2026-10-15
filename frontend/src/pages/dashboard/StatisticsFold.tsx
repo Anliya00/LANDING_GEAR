@@ -1,4 +1,8 @@
 import { useEffect, useState } from 'react';
+import { 
+  Plane, Sliders, CheckCircle2, Clock, 
+  Disc, PlaneTakeoff, PlaneLanding, Layers 
+} from 'lucide-react';
 import { analysisApi, type FlightRow, type StatCard, type StatsResponse } from '@/api/analysis';
 import { Fold, periodRange, type Period } from './controls';
 import { fmtNum, unitLabel } from './format';
@@ -15,17 +19,59 @@ function RangeBar({ card }: { card: StatCard }) {
   return <div className="range" aria-hidden="true"><div className="range-track"><i style={{ left: `${pos}%` }} /></div></div>;
 }
 
-const GROUPS: { id: string; title: string; sub: string; kinds: string[] }[] = [
-  { id: 'gear', title: 'Landing gear cycle', sub: 'Lever event to last gear locked', kinds: ['extension', 'retraction'] },
-  { id: 'takeoff', title: 'Take-off', sub: 'Mass at lift-off and load in the take-off roll', kinds: ['mass_up', 'nz_up'] },
-  { id: 'landing', title: 'Landing and landing roll', sub: 'Touchdown, chute selection and the roll to 10 kt', kinds: ['mass_down', 'sink', 'chute', 'nx_max', 'nx_avg', 'runway', 'nz_down'] },
+const GROUPS = [
+  { 
+    id: 'gear', 
+    title: 'Landing gear cycle', 
+    sub: 'Lever event to last gear locked', 
+    kinds: ['extension', 'retraction'],
+    icon: Disc,
+    iconClass: 'group-icon-gear',
+  },
+  { 
+    id: 'takeoff', 
+    title: 'Take-off', 
+    sub: 'Mass at lift-off and load in the take-off roll', 
+    kinds: ['mass_up', 'nz_up'],
+    icon: PlaneTakeoff,
+    iconClass: 'group-icon-takeoff',
+  },
+  { 
+    id: 'landing', 
+    title: 'Landing and landing roll', 
+    sub: 'Touchdown, chute selection and the roll to 10 kt', 
+    kinds: ['mass_down', 'sink', 'chute', 'nx_max', 'nx_avg', 'runway', 'nz_down'],
+    icon: PlaneLanding,
+    iconClass: 'group-icon-landing',
+  },
 ];
 
 const flightLabel = (n: number | null) => (n === null ? '—' : String(n));
 
-function Kpi({ label, value, hint }: { label: string; value: React.ReactNode; hint?: string }) {
+function Kpi({ 
+  label, 
+  value, 
+  hint,
+  icon,
+  tone = 'blue',
+}: { 
+  label: string; 
+  value: React.ReactNode; 
+  hint?: string;
+  icon?: React.ReactNode;
+  tone?: 'blue' | 'purple' | 'green' | 'amber';
+}) {
   return (
-    <div className="kpi"><span className="kpi-label">{label}</span><b className="kpi-value">{value}</b>{hint && <span className="kpi-hint">{hint}</span>}</div>
+    <div className={`kpi kpi-tone-${tone}`}>
+      <div className="kpi-header-row">
+        {icon && <div className={`kpi-icon-wrap ${tone}`}>{icon}</div>}
+        <div className="kpi-body">
+          <span className="kpi-value">{value}</span>
+          <span className="kpi-label">{label}</span>
+        </div>
+      </div>
+      {hint && <div className="kpi-hint">{hint}</div>}
+    </div>
   );
 }
 
@@ -36,7 +82,7 @@ function Card({ card }: { card: StatCard }) {
   return (
     <article className={`stat-card ${empty ? 'is-empty' : ''}`}>
       <header>
-        <span className={`stat-icon tone-${tone}`}><ParamIcon kind={card.kind} size={30} /></span>
+        <span className={`stat-icon tone-${tone}`}><ParamIcon kind={card.kind} size={26} /></span>
         <h3>{card.title}</h3>
       </header>
       <div className="stat-label">Average</div>
@@ -74,28 +120,66 @@ export function StatisticsPanel({ period, aircraft, selected }: { period: Period
   const cards = data?.cards ?? [];
   const withData = cards.filter((c) => c.flights > 0).length;
   const known = new Set(GROUPS.flatMap((g) => g.kinds));
-  const groups = [...GROUPS, { id: 'other', title: 'Other', sub: '', kinds: [] as string[] }]
+  const groups = [...GROUPS, { id: 'other', title: 'Other', sub: '', kinds: [] as string[], icon: Layers, iconClass: 'group-icon-other' }]
     .map((g) => ({ ...g, cards: cards.filter((c) => (g.id === 'other' ? !known.has(c.kind) : g.kinds.includes(c.kind))) }))
     .filter((g) => g.cards.length > 0);
 
-  const section = (g: (typeof groups)[number]) => (
-    <Fold key={g.id} id={`stats.${g.id}`} title={g.title} subtitle={g.sub || undefined}>
-      <div className={`stat-grid ${loading ? 'is-loading' : ''}`}>
-        {g.cards.map((c) => <Card key={c.param} card={c} />)}
-      </div>
-    </Fold>
-  );
+  const section = (g: (typeof groups)[number]) => {
+    const IconComp = g.icon;
+    const titleWithIcon = (
+      <span className="fold-title-with-icon">
+        {IconComp && (
+          <span className={`fold-icon-badge ${g.iconClass || ''}`}>
+            <IconComp size={22} />
+          </span>
+        )}
+        <span>{g.title}</span>
+      </span>
+    );
+
+    return (
+      <Fold key={g.id} id={`stats.${g.id}`} title={titleWithIcon} subtitle={g.sub || undefined}>
+        <div className={`stat-grid ${loading ? 'is-loading' : ''}`}>
+          {g.cards.map((c) => <Card key={c.param} card={c} />)}
+        </div>
+      </Fold>
+    );
+  };
+
   const top = groups.filter((g) => g.id === 'gear' || g.id === 'takeoff');
   const rest = groups.filter((g) => g.id !== 'gear' && g.id !== 'takeoff');
 
   return (
     <>
       <div className={`kpi-row ${loading ? 'is-loading' : ''}`}>
-        <Kpi label={selected ? 'Flight' : 'Flights analysed'} value={selected ? flightLabel(selected.flight_number) : (data?.flights ?? '—')}
-          hint={selected ? `AC${selected.aircraft_number} · ${selected.date}` : (aircraft ? `AC${aircraft}` : 'All aircraft')} />
-        <Kpi label="Parameters" value={cards.length || '—'} hint="tracked per flight" />
-        <Kpi label="With data" value={cards.length ? withData : '—'} hint={selected ? 'in this flight' : 'in this selection'} />
-        <Kpi label="No data yet" value={cards.length ? cards.length - withData : '—'} hint="nothing computed" />
+        <Kpi 
+          label={selected ? 'Flight' : 'Flights analysed'} 
+          value={selected ? flightLabel(selected.flight_number) : (data?.flights ?? '—')}
+          hint={selected ? `AC${selected.aircraft_number} · ${selected.date}` : (aircraft ? `AC${aircraft}` : 'All aircraft')}
+          icon={<Plane size={26} />}
+          tone="blue"
+        />
+        <Kpi 
+          label="Parameters" 
+          value={cards.length || '—'} 
+          hint="Tracked per flight"
+          icon={<Sliders size={26} />}
+          tone="purple"
+        />
+        <Kpi 
+          label="With data" 
+          value={cards.length ? withData : '—'} 
+          hint={selected ? 'In this flight' : 'In this selection'}
+          icon={<CheckCircle2 size={26} />}
+          tone="green"
+        />
+        <Kpi 
+          label="No data yet" 
+          value={cards.length ? cards.length - withData : '—'} 
+          hint="Nothing computed"
+          icon={<Clock size={26} />}
+          tone="amber"
+        />
       </div>
       {error && <div className="dash-error" role="alert">{error}</div>}
       {top.length > 0 && <div className="stat-pair">{top.map(section)}</div>}

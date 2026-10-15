@@ -119,10 +119,10 @@
 /* --- Shell metrics -------------------------------------------------------- */
 
 :root {
-  --shell-rail: 296px;
-  --shell-rail-collapsed: 72px;
+  --shell-rail: 260px;
+  --shell-rail-collapsed: 68px;
   --shell-topbar: 64px;
-  --shell-mark: 84px;
+  --shell-mark: 78px;
 }
 /* --- Fonts ---------------------------------------------------------------- */
 
