@@ -162,9 +162,9 @@ export function FlightTable({
     const s = (rawStatus || '').toUpperCase();
     if (s.includes('COMPLETE')) {
       return <span className="status-badge badge-complete">Completed</span>;
-    } else if (s.includes('ANALYS') || s.includes('UPLOADING') || s.includes('PROGRESS')) {
+    } else if (s.includes('ANALYSING') || s.includes('UPLOADING') || s.includes('PROGRESS')) {
       return <span className="status-badge badge-processing">In Progress</span>;
-    } else if (s.includes('FAIL') || s.includes('ERROR') || s.includes('WARN')) {
+    } else if (s.includes('FAILED') || s.includes('ERROR') || s.includes('WARN')) {
       return <span className="status-badge badge-failed">Failed</span>;
     }
     return <span className="status-badge badge-pending">Pending</span>;
