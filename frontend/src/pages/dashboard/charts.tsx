@@ -118,7 +118,7 @@ function PlotlyChart({
         height,
         paper_bgcolor: 'rgba(0,0,0,0)',
         plot_bgcolor: 'rgba(0,0,0,0)',
-        font: { family: t.font, size: 12, color: t.muted },
+        font: { family: t.font, size: 14, color: t.muted },
         hovermode: false,           // read-out and cursor are ours (see above)
         ...layout,
       }, {
@@ -270,24 +270,24 @@ export function LineChart({
     return {
       data,
       layout: {
-        title: title ? { text: title, x: 0.01, font: { size: 14, color: t.ink } } : undefined,
-        margin: { l: 58, r: 18, t: title ? 40 : 28, b: 44 },
+        title: title ? { text: title, x: 0.01, font: { size: 17, color: t.ink } } : undefined,
+        margin: { l: 66, r: 18, t: title ? 40 : 28, b: 44 },
         dragmode: 'zoom',
         showlegend: true,
-        legend: { orientation: 'h', x: 0, y: 1.12, font: { color: t.ink } },
+        legend: { orientation: 'h', x: 0, y: 1.14, font: { size: 14, color: t.ink } },
         xaxis: {
           type: 'date',
           tickformat: spanDays <= 90 ? '%d %b' : '%b %y',
           showgrid: false,
           linecolor: t.grid,
-          tickfont: { color: t.muted, size: 11 },
+          tickfont: { color: t.muted, size: 13.5 },
         },
         yaxis: {
-          title: { text: unit, font: { size: 11, color: t.faint } },
+          title: { text: unit, font: { size: 13.5, color: t.faint } },
           rangemode: 'tozero',
           gridcolor: t.grid,
           zeroline: false,
-          tickfont: { color: t.muted, size: 11 },
+          tickfont: { color: t.muted, size: 13.5 },
         },
       },
     };
@@ -345,7 +345,7 @@ function valueAt(points: [number, number | null][], t: number, step: boolean): n
 }
 
 export function SignalStack({
-  rows, xMin, xMax, markers = [], showAxis = true, labelWidth = 118,
+  rows, xMin, xMax, markers = [], showAxis = true, labelWidth = 138,
 }: {
   rows: SignalRow[];
   xMin: number;
@@ -401,7 +401,7 @@ export function SignalStack({
         showline: false,
         showgrid: !step,
         gridcolor: t.grid,
-        tickfont: { size: 10, color: t.faint },
+        tickfont: { size: 12.5, color: t.muted },
         ...(step ? { tickvals: [0, 1] } : { nticks: 3 }),
       };
       // light band behind each row, as in the earlier design
@@ -411,7 +411,7 @@ export function SignalStack({
       });
       layout.annotations.push({
         xref: 'paper', yref: 'paper', x: 0, y: (top + bottom) / 2, xanchor: 'right', yanchor: 'middle',
-        xshift: -34, text: r.label, showarrow: false, font: { size: 12, color: t.ink }, align: 'right',
+        xshift: -38, text: r.label, showarrow: false, font: { size: 14.5, color: t.ink }, align: 'right',
       });
 
       r.lines.forEach((l) => {
@@ -432,7 +432,7 @@ export function SignalStack({
       anchor: names[names.length - 1],
       showticklabels: showAxis,
       ticks: showAxis ? 'outside' : '',
-      tickfont: { size: 11, color: t.muted },
+      tickfont: { size: 13, color: t.muted },
       tickformatstops: [
         { dtickrange: [null, 1000], value: '%H:%M:%S.%L' },
         { dtickrange: [1000, null], value: '%H:%M:%S' },
@@ -451,8 +451,8 @@ export function SignalStack({
       });
       layout.annotations.push({
         xref: 'x', yref: 'paper', x: wall(mk.t * 1000), y: 1, xanchor: 'left', yanchor: 'top',
-        xshift: 4, yshift: -2 - mi * 13, text: mk.label, showarrow: false,
-        font: { size: 10, color: mk.color },
+        xshift: 4, yshift: -2 - mi * 17, text: mk.label, showarrow: false,
+        font: { size: 13, color: mk.color },
       });
     });
 

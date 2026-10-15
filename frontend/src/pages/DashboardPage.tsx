@@ -106,14 +106,15 @@ export default function DashboardPage() {
       {error && <div className="dash-error" role="alert">{error}</div>}
 
       <div className="dash-filters">
-        <PeriodBar period={period} onChange={setPeriod} preset="month1" presetLabel="Last 1 month" count={null} />
-        <label className="dash-field dash-aircraft">
+         <label className="dash-field dash-aircraft">
           <span className="dash-label">Aircraft</span>
           <select value={aircraft ?? ''} onChange={(e) => setAircraft(e.target.value ? Number(e.target.value) : null)}>
             <option value="">All aircraft</option>
             {(meta?.aircraft ?? []).map((a) => <option key={a} value={a}>AC{a}</option>)}
           </select>
         </label>
+        <PeriodBar period={period} onChange={setPeriod} preset="month1" presetLabel="Last 1 month" count={null} />
+       
       </div>
 
       {section !== 'trend' && (

@@ -3,7 +3,13 @@
    light and dark both work; series colours are fixed in charts.tsx.
    =========================================================================== */
 
-.dash { display: flex; flex-direction: column; gap: var(--s5); padding-bottom: var(--s6); }
+.dash {
+  display: flex; flex-direction: column; gap: var(--s5); padding-bottom: var(--s6);
+  /* the dashboard reads bigger than the rest of the app: every size below follows these */
+  --text-xs: 15px; --text-sm: 16.5px; --text-base: 17.5px; --text-md: 19px;
+  --text-lg: 21px; --text-xl: 26px; --text-2xl: 30px; --text-3xl: 36px;
+  font-size: 17.5px; line-height: 1.5;
+}
 
 /* --- Fold ---------------------------------------------------------------- */
 
@@ -54,18 +60,18 @@
 }
 
 .dash select, .dash input[type='date'], .dash .num-input, .dash .fn-input {
-  height: 36px; padding: 0 var(--s3);
+  height: 44px; padding: 0 var(--s3);
   background: var(--bg-raised); color: var(--ink-strong);
   border: 1px solid var(--rule-strong); border-radius: 8px;
   font: inherit; font-size: var(--text-sm);
 }
 .dash select:focus-visible, .dash input:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
-.dash .num-input { width: 84px; }
-.dash .fn-input { width: 150px; }
+.dash .num-input { width: 96px; }
+.dash .fn-input { width: 180px; }
 
 .chip {
   display: inline-flex; align-items: center; gap: 6px;
-  height: 36px; padding: 0 var(--s4);
+  height: 44px; padding: 0 var(--s4);
   background: var(--bg-raised); color: var(--ink-strong);
   border: 1px solid var(--rule-strong); border-radius: 999px;
   font: inherit; font-size: var(--text-sm); cursor: pointer;
@@ -82,7 +88,7 @@
 
 /* --- Statistics cards ------------------------------------------------------ */
 
-.stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: var(--s4); transition: opacity var(--dur-base); }
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: var(--s4); transition: opacity var(--dur-base); }
 .stat-grid.is-loading { opacity: 0.55; }
 .stat-card {
   display: flex; flex-direction: column; gap: 2px;
@@ -93,7 +99,7 @@
 .stat-card:hover { box-shadow: 0 10px 28px -14px rgba(22, 119, 255, 0.35); border-color: var(--accent); transform: translateY(-1px); }
 .stat-card header { display: flex; align-items: center; gap: var(--s3); margin-bottom: var(--s3); }
 .stat-card h3 { margin: 0; font-size: var(--text-md); line-height: var(--lh-tight); color: var(--ink-strong); font-weight: 600; }
-.stat-icon { flex: none; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; }
+.stat-icon { flex: none; display: grid; place-items: center; width: 54px; height: 54px; border-radius: 14px; }
 .tone-blue { background: var(--accent-soft); color: var(--accent); }
 .tone-orange { background: var(--caution-soft); color: #d9480f; }
 .stat-label { color: var(--ink-faint); font-size: var(--text-sm); }
@@ -108,7 +114,7 @@
 
 .datepicker { position: relative; }
 .datepicker-pop {
-  position: absolute; z-index: 30; top: calc(100% + 6px); left: 0; width: 280px;
+  position: absolute; z-index: 30; top: calc(100% + 6px); left: 0; width: 320px;
   padding: var(--s3); background: var(--bg-raised);
   border: 1px solid var(--rule-strong); border-radius: 12px;
   box-shadow: 0 16px 40px -12px rgba(16, 42, 67, 0.35);
@@ -117,7 +123,7 @@
 .datepicker-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
 .datepicker-wd { text-align: center; font-size: var(--text-xs); color: var(--ink-faint); padding: 4px 0; }
 .datepicker-day {
-  height: 34px; border: 0; border-radius: 8px; background: transparent;
+  height: 40px; border: 0; border-radius: 8px; background: transparent;
   color: var(--ink-faint); font: inherit; font-size: var(--text-sm); cursor: not-allowed;
 }
 .datepicker-day.has-data { color: var(--ink-strong); font-weight: 600; background: var(--accent-soft); cursor: pointer; }
@@ -129,10 +135,10 @@
 /* --- Flight list ------------------------------------------------------------- */
 
 .flight-list { border: 1px solid var(--rule); border-radius: 12px; overflow: hidden; background: var(--bg-raised); }
-.flight-scroll { max-height: 224px; overflow-y: auto; }
+.flight-scroll { max-height: 280px; overflow-y: auto; }
 .flight-row {
   display: grid; grid-template-columns: 1.1fr 1.4fr 1.6fr 1fr; gap: var(--s3);
-  width: 100%; padding: 10px var(--s4); border: 0; border-bottom: 1px solid var(--divider);
+  width: 100%; padding: 12px var(--s4); border: 0; border-bottom: 1px solid var(--divider);
   background: transparent; color: var(--ink-strong); font: inherit; font-size: var(--text-sm); text-align: left;
   cursor: pointer; font-variant-numeric: tabular-nums;
 }
@@ -193,7 +199,7 @@
 .chart-marker { font-size: 10px; font-weight: 600; }
 .chart-cursor { stroke: var(--ink-faint); stroke-width: 1; stroke-dasharray: 2 3; pointer-events: none; }
 .chart-tip {
-  position: absolute; z-index: 5; pointer-events: none; min-width: 150px;
+  position: absolute; z-index: 5; pointer-events: none; min-width: 190px;
   padding: var(--s2) var(--s3); background: var(--bg-raised); color: var(--ink-strong);
   border: 1px solid var(--rule-strong); border-radius: 10px; font-size: var(--text-xs);
   box-shadow: 0 10px 24px -10px rgba(16, 42, 67, 0.4); line-height: 1.5;
@@ -209,12 +215,9 @@
 
 /* --- Filters + section tabs (D6 layout: period and aircraft, then three tabs) --- */
 
-.dash-filters { display: flex; flex-wrap: wrap; align-items: stretch; gap: var(--s3); }
-.dash-filters .dash-toolbar { flex: 1 1 560px; }
-.dash-aircraft {
-  padding: var(--s3) var(--s4); background: var(--bg-sunken);
-  border: 1px solid var(--rule); border-radius: 12px;
-}
+.dash-filters { display: flex; flex-wrap: nowrap; align-items: stretch; gap: var(--s3); }
+.dash-filters .dash-toolbar { flex: 1 1 auto; min-width: 0; }
+.dash-aircraft { flex: none; }
 .dash-tabs {
   display: flex;
   gap: var(--s3);
@@ -279,7 +282,7 @@
 .kpi-row.is-loading { opacity: 0.55; }
 .kpi { display: flex; flex-direction: column; gap: 2px; padding: var(--s4) var(--s5); background: var(--bg-raised); border: 1px solid var(--rule); border-radius: 14px; }
 .kpi-label { color: var(--ink-muted); font-size: var(--text-sm); }
-.kpi-value { font-size: 30px; line-height: 1.15; font-weight: 700; color: var(--ink-strong); font-variant-numeric: tabular-nums; }
+.kpi-value { font-size: 36px; line-height: 1.15; font-weight: 700; color: var(--ink-strong); font-variant-numeric: tabular-nums; }
 .kpi-hint { color: var(--ink-faint); font-size: var(--text-xs); }
 
 .range { margin-top: var(--s2); height: 14px; display: flex; align-items: center; }
@@ -288,14 +291,14 @@
 .range-empty { visibility: hidden; }
 
 .dash-table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); font-variant-numeric: tabular-nums; }
-.dash-table th { text-align: left; font-weight: 500; color: var(--ink-faint); padding: 8px 10px; border-bottom: 1px solid var(--rule); position: sticky; top: 0; background: var(--bg-raised); }
-.dash-table td { padding: 8px 10px; border-bottom: 1px solid var(--divider); color: var(--ink-strong); }
+.dash-table th { text-align: left; font-weight: 500; color: var(--ink-muted); padding: 10px 12px; border-bottom: 1px solid var(--rule); position: sticky; top: 0; background: var(--bg-raised); }
+.dash-table td { padding: 10px 12px; border-bottom: 1px solid var(--divider); color: var(--ink-strong); }
 .dash-table .num { text-align: right; }
 .dash-table tr.is-none td { color: var(--ink-faint); }
 .dash-table-scroll { max-height: 320px; overflow-y: auto; border: 1px solid var(--rule); border-radius: 12px; }
 .ev-group { display: inline-block; min-width: 46px; margin-right: var(--s2); color: var(--ink-faint); font-size: var(--text-xs); }
 
-.trend-layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: var(--s4); align-items: start; }
+.trend-layout { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: var(--s4); align-items: start; }
 .trend-side { display: flex; flex-direction: column; gap: var(--s3); min-width: 0; }
 .mini-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s2); }
 .mini-tiles div { display: flex; flex-direction: column; padding: var(--s2) var(--s3); background: var(--bg-sunken); border: 1px solid var(--rule); border-radius: 10px; }
@@ -305,7 +308,7 @@
 @media (max-width: 1100px) { .trend-layout { grid-template-columns: 1fr; } }
 
 .seg { display: inline-flex; border: 1px solid var(--rule-strong); border-radius: 10px; overflow: hidden; background: var(--bg-raised); align-self: flex-start; }
-.seg-btn { height: 36px; padding: 0 var(--s4); border: 0; border-right: 1px solid var(--rule); background: transparent; color: var(--ink-muted); font: inherit; font-size: var(--text-sm); cursor: pointer; }
+.seg-btn { height: 44px; padding: 0 var(--s4); border: 0; border-right: 1px solid var(--rule); background: transparent; color: var(--ink-muted); font: inherit; font-size: var(--text-sm); cursor: pointer; }
 .seg-btn:last-child { border-right: 0; }
 .seg-btn:hover { background: var(--surface-hover); }
 .seg-btn.is-on { background: var(--accent); color: var(--accent-ink); font-weight: 600; }

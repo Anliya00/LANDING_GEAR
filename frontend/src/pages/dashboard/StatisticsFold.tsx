@@ -36,7 +36,7 @@ function Card({ card }: { card: StatCard }) {
   return (
     <article className={`stat-card ${empty ? 'is-empty' : ''}`}>
       <header>
-        <span className={`stat-icon tone-${tone}`}><ParamIcon kind={card.kind} size={26} /></span>
+        <span className={`stat-icon tone-${tone}`}><ParamIcon kind={card.kind} size={30} /></span>
         <h3>{card.title}</h3>
       </header>
       <div className="stat-label">Average</div>
