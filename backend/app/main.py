@@ -57,6 +57,8 @@ from app.api import processing as processing_api
 app.include_router(processing_api.router)
 from app.api import analysis as analysis_api
 app.include_router(analysis_api.router)
+from app.api import users as users_api
+app.include_router(users_api.router)
 
 @app.get("/health", tags=["meta"])
 async def health() -> dict[str, str]:

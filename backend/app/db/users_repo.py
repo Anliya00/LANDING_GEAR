@@ -191,3 +191,120 @@ def grant_role(
         r=role_code,
         gb=granted_by,
     )
+
+
+def revoke_role(conn: oracledb.Connection, user_id: int, role_code: str) -> None:
+    cur = conn.cursor()
+    cur.execute(
+        "DELETE FROM USER_ROLES WHERE USER_ID = :i AND ROLE_CODE = :r",
+        i=user_id,
+        r=role_code,
+    )
+
+
+def set_user_roles(
+    conn: oracledb.Connection,
+    user_id: int,
+    role_codes: list[str],
+    granted_by: int | None = None,
+) -> None:
+    """Synchronize user roles: remove any not in role_codes, add new ones."""
+    cur = conn.cursor()
+    cur.execute("DELETE FROM USER_ROLES WHERE USER_ID = :i", i=user_id)
+    for r in role_codes:
+        cur.execute(
+            """
+            INSERT INTO USER_ROLES (USER_ID, ROLE_CODE, GRANTED_BY)
+            VALUES (:i, :r, :gb)
+            """,
+            i=user_id,
+            r=r.strip().lower(),
+            gb=granted_by,
+        )
+
+
+def list_all(conn: oracledb.Connection) -> list[dict[str, Any]]:
+    """List all users with their roles, lockout status and timestamps."""
+    cur = conn.cursor()
+    cur.execute(
+        """
+        SELECT USER_ID, USERNAME, DISPLAY_NAME, EMAIL, STATUS,
+               MUST_CHANGE_PWD, FAILED_COUNT, LOCKED_UNTIL,
+               LAST_LOGIN_AT, CREATED_AT, CREATED_BY, UPDATED_AT
+          FROM USERS
+         ORDER BY USER_ID
+        """
+    )
+    users = rows_to_dicts(cur)
+
+    # Collect all user roles efficiently
+    cur.execute(
+        """
+        SELECT ur.USER_ID, ur.ROLE_CODE, r.ROLE_NAME
+          FROM USER_ROLES ur
+          JOIN ROLES r ON r.ROLE_CODE = ur.ROLE_CODE
+         ORDER BY ur.USER_ID, r.SORT_ORDER
+        """
+    )
+    roles_by_user: dict[int, list[str]] = {}
+    for uid, r_code, _ in cur.fetchall():
+        roles_by_user.setdefault(uid, []).append(r_code)
+
+    now = datetime.now()
+    for u in users:
+        uid = u["user_id"]
+        u["roles"] = roles_by_user.get(uid, [])
+        u["is_locked"] = is_locked(u, now)
+        rem = lock_remaining(u)
+        u["lock_remaining_seconds"] = int(rem.total_seconds()) if rem else 0
+
+    return users
+
+
+def update_user(
+    conn: oracledb.Connection,
+    user_id: int,
+    display_name: str,
+    email: str | None = None,
+    status: str = "active",
+    must_change: bool = False,
+) -> None:
+    cur = conn.cursor()
+    cur.execute(
+        """
+        UPDATE USERS
+           SET DISPLAY_NAME = :d,
+               EMAIL = :e,
+               STATUS = :s,
+               MUST_CHANGE_PWD = :m,
+               UPDATED_AT = SYSTIMESTAMP
+         WHERE USER_ID = :i
+        """,
+        d=display_name.strip(),
+        e=email.strip() if email else None,
+        s=status.strip().lower(),
+        m=1 if must_change else 0,
+        i=user_id,
+    )
+
+
+def unlock_user(conn: oracledb.Connection, user_id: int) -> None:
+    """Clear failed login attempts and unlock the account."""
+    cur = conn.cursor()
+    cur.execute(
+        """
+        UPDATE USERS
+           SET FAILED_COUNT = 0,
+               LOCKED_UNTIL = NULL,
+               UPDATED_AT = SYSTIMESTAMP
+         WHERE USER_ID = :i
+        """,
+        i=user_id,
+    )
+
+
+def delete_user(conn: oracledb.Connection, user_id: int) -> None:
+    """Delete user. Foreign keys to USER_ROLES and SESSIONS cascade."""
+    cur = conn.cursor()
+    cur.execute("DELETE FROM USERS WHERE USER_ID = :i", i=user_id)
+

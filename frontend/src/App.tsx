@@ -5,6 +5,7 @@ import { RequireAuth, RequirePermission } from '@/auth/guards';
 import LoginPage from './pages/Login/LoginPage';
 import ChangePasswordPage from './pages/Login/ChangePasswordPage';
 import HomePage from './pages/HomePage';
+import FlightsPage from './pages/flights/FlightsPage';
 import IngestionPage from './pages/IngestionPage';
 import DashboardPage from './pages/DashboardPage';
 import ConfigurationPage from './pages/ConfigurationPage';
@@ -20,10 +21,11 @@ export default function App() {
       <Route path="/" element={<RequireAuth><AppShell /></RequireAuth>}>
         <Route index element={<HomePage />} />
 
+        <Route path="flights" element={<FlightsPage />} />
+        <Route path="flights/*" element={<FlightsPage />} />
         <Route path="ingestion" element={<IngestionPage />} />
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="statistics" element={<Navigate to="/dashboard" replace />} />
-        <Route path="flights/*" element={<Navigate to="/dashboard" replace />} />
         <Route path="queue" element={<Navigate to="/ingestion" replace />} />
         <Route path="configuration" element={<ConfigurationPage />} />
         <Route
@@ -39,4 +41,4 @@ export default function App() {
       </Route>
     </Routes>
   );
-}
+}
