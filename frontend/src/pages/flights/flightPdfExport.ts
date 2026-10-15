@@ -14,42 +14,32 @@ function formatDateTime(dtStr: string | null | undefined): string {
   }
 }
 
-// Safely resolve jsPDF and jspdf-autotable without hard crash if node_modules lacks them
-async function loadPdfEngines() {
-  try {
-    const jspdfModule: any = await import(/* @vite-ignore */ 'jspdf');
-    const autoTableModule: any = await import(/* @vite-ignore */ 'jspdf-autotable');
-    const JsPdfClass = jspdfModule.default?.jsPDF || jspdfModule.jsPDF || jspdfModule.default || jspdfModule;
-    const autoTableFn = autoTableModule.default || autoTableModule;
-    return { jsPDF: JsPdfClass, autoTable: autoTableFn };
-  } catch (err) {
-    console.warn('[PDF Export] jsPDF or jspdf-autotable could not be loaded dynamically:', err);
-    return null;
-  }
-}
-
 export async function downloadFlightPdf(summary: FlightSummaryResponse) {
+  let jsPDF: any;
+  let autoTable: any;
+
+  try {
+    const jspdfModule = await import('jspdf');
+    jsPDF = jspdfModule.default || jspdfModule;
+    const autoTableModule = await import('jspdf-autotable');
+    autoTable = autoTableModule.default || autoTableModule;
+  } catch (err) {
+    console.warn('PDF library not installed yet in local node_modules:', err);
+    alert(
+      'The PDF export library (jspdf) is not installed in your local node_modules.\n\n' +
+      'Please run:\n  cd frontend\n  npm install\n\n' +
+      'Opening the printable flight test report instead...'
+    );
+    printFlightReportHtml(summary);
+    return;
+  }
+
   const { flight, kpis, total_duration_minutes, timeline_phases, parameters, events } = summary;
 
   const fNumStr = flight.flight_number !== undefined ? String(flight.flight_number).padStart(3, '0') : '001';
   const acName = flight.aircraft_number ? `AC${flight.aircraft_number}` : (flight.aircraft_id ? `AC${flight.aircraft_id}` : 'AC');
   const flightDisplayId = `${acName}_${fNumStr}`;
   const nowStr = new Date().toLocaleString('en-GB');
-
-  const engines = await loadPdfEngines();
-  if (!engines || !engines.jsPDF) {
-    alert(
-      "PDF Generation Library Notice:\n\n" +
-      "The 'jspdf' package is not yet installed in your frontend node_modules.\n\n" +
-      "Opening the high-resolution Printable Report View instead.\n\n" +
-      "To enable direct PDF file downloads, please open a terminal in the 'frontend' directory and run:\n" +
-      "   npm install"
-    );
-    printFlightReportHtml(summary);
-    return;
-  }
-
-  const { jsPDF, autoTable } = engines;
 
   // Initialize jsPDF in portrait A4
   const doc = new jsPDF({
