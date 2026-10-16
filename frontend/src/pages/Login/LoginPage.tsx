@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthProvider';
 import { ApiError } from '@/api/client';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -7,10 +7,6 @@ import './login.css'
 
 const CDAC_LOGO = '/logos/cdac.png';
 const HAL_LOGO = '/logos/hal.png';
-
-interface LocationState {
-  from?: string;
-}
 
 function UserIcon() {
   return (
@@ -36,7 +32,6 @@ export default function LoginPage() {
   const { signIn, user, status } = useAuth();
   const { theme, toggle } = useTheme();
   const navigate = useNavigate();
-  const location = useLocation();
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -44,15 +39,11 @@ export default function LoginPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const params = new URLSearchParams(location.search);
-  const nextParam = params.get('next');
-  const destination = (location.state as LocationState | null)?.from ?? (nextParam && nextParam.startsWith('/') ? nextParam : '/');
-
   useEffect(() => {
     if (status === 'ready' && user) {
-      navigate(destination, { replace: true });
+      navigate('/', { replace: true });
     }
-  }, [status, user, destination, navigate]);
+  }, [status, user, navigate]);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -61,7 +52,7 @@ export default function LoginPage() {
     setBusy(true);
     try {
       await signIn(username.trim(), password, remember);
-      navigate(destination, { replace: true });
+      navigate('/', { replace: true });
     } catch (err) {
       setPassword('');
       setError(

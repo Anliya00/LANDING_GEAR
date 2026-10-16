@@ -54,8 +54,7 @@ export function RequireAuth({ children }: { children: ReactNode }) {
 
   if (status === 'loading') return <div className="shell-boot" />;
   if (!user) {
-    const next = encodeURIComponent(loc.pathname + loc.search);
-    return <Navigate to={`/login?next=${next}`} replace />;
+    return <Navigate to="/login" replace />;
   }
 
   if (user.must_change_password && loc.pathname !== '/change-password') {

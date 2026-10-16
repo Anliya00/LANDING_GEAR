@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { useAuth } from './AuthProvider';
 import { hasAnyRole, type Role } from './roles';
 
@@ -15,12 +15,11 @@ export function RequireAuth({
   roles?: Role[];
 }) {
   const { user, status } = useAuth();
-  const location = useLocation();
 
   if (status === 'loading') return null;
 
   if (!user) {
-    return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+    return <Navigate to="/login" replace />;
   }
 
   if (roles && !hasAnyRole(user.roles, roles)) {
