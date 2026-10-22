@@ -92,6 +92,13 @@ def set_status(
             r=(remarks or None) and remarks[: st.REMARKS_MAX],
         )
 
+    # When analysis finishes (completed or failed), record the end time on FLIGHTS
+    if value in (st.ANALYSIS_COMPLETE, st.ANALYSIS_FAILED):
+        cur.execute(
+            "UPDATE FLIGHTS SET INGESTION_END_TIME = SYSTIMESTAMP WHERE FLIGHT_ID = :f",
+            f=flight_id,
+        )
+
 
 def queue_for_analysis(
     conn: oracledb.Connection, flight_id: int, remarks: str | None = None
@@ -112,6 +119,11 @@ def queue_for_analysis(
         return (False, f"flight is {st.label(current)}; upload has not completed")
 
     set_status(conn, flight_id, st.ANALYSIS_PENDING, remarks)
+    cur = conn.cursor()
+    cur.execute(
+        "UPDATE FLIGHTS SET INGESTION_END_TIME = NULL WHERE FLIGHT_ID = :f",
+        f=flight_id,
+    )
     return (True, st.ANALYSIS_PENDING)
 
 

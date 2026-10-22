@@ -9,8 +9,10 @@ export interface FlightRow {
   configured_mass_kg: number | null;
   initial_fuel_kg: number | null;
   initial_mass_kg: number | null;
-  upload_start_time: string | null;
-  upload_end_time: string | null;
+  ingestion_start_time?: string | null;
+  ingestion_end_time?: string | null;
+  upload_start_time?: string | null;
+  upload_end_time?: string | null;
   status: string;
   error_message: string | null;
 }

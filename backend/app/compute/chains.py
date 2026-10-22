@@ -18,6 +18,7 @@ previous step landed, and it stops dead at the first miss.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 
 from app.compute.models import EventKey, Occurrence
@@ -75,9 +76,11 @@ def first_in(
 ) -> tuple[float, str] | None:
     """First edge in (after, before), or [after, before) when inclusive.
 
-    The first step of a chain is inclusive because it may coincide exactly with
-    the anchor sample; every later step is exclusive so a chain cannot consume
-    the same sample twice.
+    Inclusive means an edge may share the exact sample of the previous step (or,
+    for step 1, the anchor sample). Which steps are inclusive is decided per
+    family via `CycleSpec.inclusive_steps`; it is only safe where simultaneity
+    is physically valid (e.g. door open-limit reached together with gear
+    downlock release). Strict steps cannot consume the same sample twice.
     """
     for t, raw in edges:
         if (t >= after if inclusive else t > after) and t < before:
@@ -91,13 +94,24 @@ def walk(
     window: Window,
     occurrence_seq: int,
     anchor: tuple[EventKey, float] | None = None,
+    inclusive_steps: Sequence[bool] | None = None,
 ) -> list[Occurrence]:
     """Walk one chain inside one window.
 
     Returns the occurrences found, in step order. A list shorter than `chain`
     means the chain broke: `len(result)` is the index of the step that failed,
     which is what the caller reports as "stopped at step N".
+
+    `inclusive_steps[i]` says whether step i may share the previous step's
+    timestamp. Default: only step 0 (may coincide with the anchor sample).
     """
+    if inclusive_steps is None:
+        inclusive_steps = [i == 0 for i in range(len(chain))]
+    if len(inclusive_steps) != len(chain):
+        raise ValueError(
+            f"inclusive_steps has {len(inclusive_steps)} entries, chain has {len(chain)}"
+        )
+
     found: list[Occurrence] = []
     cursor = window.start
 
@@ -106,7 +120,7 @@ def walk(
             signals.edges(key),
             after=cursor,
             before=window.end,
-            inclusive=(step_index == 0),
+            inclusive=inclusive_steps[step_index],
         )
         if hit is None:
             break

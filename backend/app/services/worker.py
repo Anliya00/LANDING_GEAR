@@ -76,14 +76,10 @@ async def ingestion_worker():
                             )
                             logger.info(f"Finished {excel_file.name}")
                             
-                        # Success
+                        # Success: Excel to Parquet conversion finished; queue for analysis
                         cur.execute(
                             "UPDATE FLIGHT_STATUS SET STATUS = 'ANALYSIS PENDING', DATE_TIME = SYSTIMESTAMP WHERE FLIGHT_STATUS_ID = :1",
                             [status_id]
-                        )
-                        cur.execute(
-                            "UPDATE FLIGHTS SET UPLOAD_END_TIME = SYSTIMESTAMP WHERE FLIGHT_ID = :1",
-                            [flight_id]
                         )
                         conn.commit()
                         logger.info(f"Flight {flight_id} converted; queued for analysis (Analysis Pending)")
@@ -95,7 +91,7 @@ async def ingestion_worker():
                             [f"{type(e).__name__}: {e}"[:50], status_id]  # REMARKS is VARCHAR2(50)
                         )
                         cur.execute(
-                            "UPDATE FLIGHTS SET UPLOAD_END_TIME = SYSTIMESTAMP WHERE FLIGHT_ID = :1",
+                            "UPDATE FLIGHTS SET INGESTION_END_TIME = SYSTIMESTAMP WHERE FLIGHT_ID = :1",
                             [flight_id]
                         )
                         conn.commit()

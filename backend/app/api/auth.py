@@ -30,7 +30,7 @@ def _set_session_cookie(response: Response, token: str, max_age_seconds: int) ->
         value=token,
         max_age=max_age_seconds,
         httponly=True,       # JavaScript cannot read it, so XSS cannot steal it
-        samesite="strict",   # not sent on cross-site requests, so CSRF has no cookie
+        samesite=s.session_cookie_samesite,   # "lax" by default to allow LAN and navigation sessions
         secure=s.session_cookie_secure,
         path="/",
     )

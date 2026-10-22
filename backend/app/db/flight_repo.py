@@ -18,7 +18,7 @@ def list_all(conn: oracledb.Connection) -> list[dict[str, Any]]:
                  THEN a.AIRCRAFT_MASS_KG + f.INITIAL_FUEL_LOADED_KG
                  ELSE COALESCE(a.AIRCRAFT_MASS_KG, f.INITIAL_FUEL_LOADED_KG)
                END AS INITIAL_MASS_KG,
-               f.UPLOAD_START_TIME, f.UPLOAD_END_TIME,
+               f.INGESTION_START_TIME, f.INGESTION_END_TIME,
                fs.STATUS, fs.REMARKS as ERROR_MESSAGE
           FROM FLIGHTS f
           LEFT JOIN AIRCRAFTS a ON f.AIRCRAFT_ID = a.AIRCRAFT_ID
@@ -45,7 +45,7 @@ def get_flight_by_id(conn: oracledb.Connection, flight_id: int) -> dict[str, Any
                  THEN a.AIRCRAFT_MASS_KG + f.INITIAL_FUEL_LOADED_KG
                  ELSE COALESCE(a.AIRCRAFT_MASS_KG, f.INITIAL_FUEL_LOADED_KG)
                END AS INITIAL_MASS_KG,
-               f.UPLOAD_START_TIME, f.UPLOAD_END_TIME,
+               f.INGESTION_START_TIME, f.INGESTION_END_TIME,
                fs.STATUS, fs.REMARKS as ERROR_MESSAGE
           FROM FLIGHTS f
           LEFT JOIN AIRCRAFTS a ON f.AIRCRAFT_ID = a.AIRCRAFT_ID

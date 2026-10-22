@@ -37,11 +37,12 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# allow_credentials with an explicit origin list. It cannot be "*" — browsers
+# allow_credentials with an explicit origin list or regex. It cannot be "*" — browsers
 # refuse to send cookies to a wildcard origin.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origin_list,
+    allow_origin_regex=settings.cors_origin_regex,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

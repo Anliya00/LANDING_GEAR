@@ -32,6 +32,12 @@ ANCHOR = EventKey("Data-1", "uc_lever_sel_up", RISING)
 #: The extension anchor, so a lever-down closes a retraction window too.
 EXTENSION_ANCHOR = EventKey("Data-1", "uc_lever_sel_dn", RISING)
 
+#: Step order: 1 door unlock, 2 open limit reached, 3 gear downlock release,
+#: 4 gear uplock, 5 door close (open limit leaves), 6 door lock.
+#: Step 3 may coincide with step 2 and step 5 with step 4 (limit-switch signals);
+#: steps 2, 4 and 6 stay strictly after their predecessor.
+INCLUSIVE_STEPS = (True, False, True, False, True, False)
+
 SPEC = CycleSpec(
     family=FAMILY,
     anchor=ANCHOR,
@@ -42,6 +48,7 @@ SPEC = CycleSpec(
     gear_param="{door}_GEAR_RETRACTION_TIME",
     window_cap_s=WINDOW_CAP_S,
     anchor_debounce_s=ANCHOR_DEBOUNCE_S,
+    inclusive_steps=INCLUSIVE_STEPS,
 )
 
 EVENT_KEYS = SPEC.event_keys | {EXTENSION_ANCHOR}

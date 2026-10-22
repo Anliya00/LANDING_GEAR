@@ -63,3 +63,13 @@ tnsnames.ora.local
 Thumbs.db
 desktop.ini
 .DS_Store
+WORKFLOW_AND_COMPUTATION_GUIDE.md
+CORE_11_PARAMETERS_CALCULATION_GUIDE.md
+PARAMETERS_CALCULATION_GUIDE.md
+
+
+# Test Scripts
+
+chains_an.py
+_cycles_an.py
+retraction_an.py

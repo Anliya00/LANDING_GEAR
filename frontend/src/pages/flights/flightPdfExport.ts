@@ -107,7 +107,7 @@ export async function downloadFlightPdf(summary: FlightSummaryResponse) {
     [
       { content: 'Ingestion Window', styles: { fontStyle: 'bold' as const, fillColor: headerGray } },
       {
-        content: `${formatDateTime(flight.upload_start_time)} to ${formatDateTime(flight.upload_end_time)}`,
+        content: `${formatDateTime(flight.ingestion_start_time || flight.upload_start_time)} to ${formatDateTime(flight.ingestion_end_time || flight.upload_end_time)}`,
         colSpan: 3,
       },
     ],
@@ -488,7 +488,7 @@ export function printFlightReportHtml(summary: FlightSummaryResponse) {
       </tr>
       <tr>
         <th>Ingestion Window</th>
-        <td colspan="3">${formatDateTime(flight.upload_start_time)} to ${formatDateTime(flight.upload_end_time)}</td>
+        <td colspan="3">${formatDateTime(flight.ingestion_start_time || flight.upload_start_time)} to ${formatDateTime(flight.ingestion_end_time || flight.upload_end_time)}</td>
       </tr>
       ${flight.error_message ? `<tr><th>Remarks/Errors</th><td colspan="3" style="color: #b91c1c;">${flight.error_message}</td></tr>` : ''}
     </table>

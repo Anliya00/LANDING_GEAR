@@ -149,7 +149,7 @@ export function FlightSignalsPlot({ points, hasRealSignals }: Props) {
           x: tCruise,
           y: 1.05,
           yref: 'paper',
-          text: 'Cruise',
+          text: 'Normal Flight',
           showarrow: false,
           font: { size: 11, color: '#0284c7', weight: 'bold' },
           bgcolor: isDark ? 'rgba(2,132,199,0.18)' : 'rgba(2,132,199,0.12)',
@@ -161,7 +161,7 @@ export function FlightSignalsPlot({ points, hasRealSignals }: Props) {
           x: tDescent,
           y: 1.05,
           yref: 'paper',
-          text: 'Descent',
+          text: 'Touchdown',
           showarrow: false,
           font: { size: 11, color: '#6366f1', weight: 'bold' },
           bgcolor: isDark ? 'rgba(99,102,241,0.18)' : 'rgba(99,102,241,0.12)',
@@ -194,7 +194,7 @@ export function FlightSignalsPlot({ points, hasRealSignals }: Props) {
           yref: 'paper',
           line: { color: 'rgba(59,130,246,0.5)', width: 1.5, dash: 'dash' },
         },
-        // Descent vertical line
+        // Touchdown vertical line
         {
           type: 'line',
           x0: tDescent,

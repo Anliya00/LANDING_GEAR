@@ -49,6 +49,10 @@ _SIGNALS: dict[str, tuple[str, str]] = {
 
 RISING, FALLING = 1, 0
 
+#: Default: only step 1 may share the anchor sample; every later step is strictly
+#: after the previous one.
+STRICT_STEPS: tuple[bool, ...] = (True, False, False, False, False, False)
+
 
 @dataclass(frozen=True)
 class CycleSpec:
@@ -65,6 +69,8 @@ class CycleSpec:
     gear_param: str
     window_cap_s: float
     anchor_debounce_s: float
+    #: Per step: may it share the previous step's timestamp (step 1: the anchor's)?
+    inclusive_steps: tuple[bool, ...] = STRICT_STEPS
 
     def chain(self, door: str) -> list[EventKey]:
         door_stem, gear_stem = _SIGNALS[door]
@@ -153,7 +159,14 @@ def compute(
 
         steps: dict[str, list[Occurrence]] = {}
         for door, chain in door_chains.items():
-            walked = chains.walk(signals, chain, window, cycle_no, anchor_occurrence.ident)
+            walked = chains.walk(
+                signals,
+                chain,
+                window,
+                cycle_no,
+                anchor_occurrence.ident,
+                inclusive_steps=spec.inclusive_steps,
+            )
             steps[door] = walked
             for occurrence in walked:
                 detected[occurrence.ident] = occurrence

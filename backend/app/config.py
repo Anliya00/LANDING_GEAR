@@ -26,6 +26,7 @@ class Settings(BaseSettings):
 
     # Sessions
     session_cookie_name: str = "sftad_session"
+    session_cookie_samesite: str = "lax"
     session_idle_hours: int = 12
     session_remember_hours: int = 336
     session_cookie_secure: bool = False
@@ -37,8 +38,11 @@ class Settings(BaseSettings):
     # Storage
     data_dir: str = "../data"
 
-    # CORS — comma separated
+    # CORS — comma separated origins or regex for local LAN IPs
     cors_origins: str = "http://localhost:5173"
+    cors_origin_regex: str | None = (
+        r"^https?://(localhost|127\.0\.0\.1|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3})(:\d+)?$"
+    )
 
     # --- Compute (new) -----------------------------------------------------
 

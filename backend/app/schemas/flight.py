@@ -14,6 +14,8 @@ class FlightOut(BaseModel):
     configured_mass_kg: float | None = None
     initial_fuel_kg: float | None = None
     initial_mass_kg: float | None = None
+    ingestion_start_time: datetime | None = None
+    ingestion_end_time: datetime | None = None
     upload_start_time: datetime | None = None
     upload_end_time: datetime | None = None
     

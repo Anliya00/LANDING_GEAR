@@ -386,10 +386,10 @@ export function FlightSummaryPane({
                     <span>Parquet Status:</span> <span className="tag tag-ok">Ready &amp; Verified</span>
                   </div>
                   <div className="q-row">
-                    <span>Upload Started:</span> <b>{flight.upload_start_time ? flight.upload_start_time.replace('T', ' ').slice(0, 19) : '—'}</b>
+                    <span>Ingestion Started:</span> <b>{(flight.ingestion_start_time || flight.upload_start_time) ? (flight.ingestion_start_time || flight.upload_start_time)!.replace('T', ' ').slice(0, 19) : '—'}</b>
                   </div>
                   <div className="q-row">
-                    <span>Upload Completed:</span> <b>{flight.upload_end_time ? flight.upload_end_time.replace('T', ' ').slice(0, 19) : '—'}</b>
+                    <span>Ingestion Completed:</span> <b>{(flight.ingestion_end_time || flight.upload_end_time) ? (flight.ingestion_end_time || flight.upload_end_time)!.replace('T', ' ').slice(0, 19) : '—'}</b>
                   </div>
                 </div>
               </div>

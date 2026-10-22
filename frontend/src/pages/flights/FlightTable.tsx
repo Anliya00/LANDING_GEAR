@@ -409,18 +409,18 @@ export function FlightTable({
                           <div className="subrow-content">
                             <div className="subrow-grid">
                               <div className="subrow-block">
-                                <span className="subrow-label"><Clock size={13} /> Upload Started</span>
-                                <b className="subrow-val">{f.upload_start_time ? f.upload_start_time.replace('T', ' ').slice(0, 19) : '—'}</b>
+                                <span className="subrow-label"><Clock size={13} /> Ingestion Started</span>
+                                <b className="subrow-val">{(f.ingestion_start_time || f.upload_start_time) ? (f.ingestion_start_time || f.upload_start_time)!.replace('T', ' ').slice(0, 19) : '—'}</b>
                               </div>
 
                               <div className="subrow-block">
-                                <span className="subrow-label"><CheckCircle2 size={13} /> Upload Completed</span>
-                                <b className="subrow-val">{f.upload_end_time ? f.upload_end_time.replace('T', ' ').slice(0, 19) : '—'}</b>
+                                <span className="subrow-label"><CheckCircle2 size={13} /> Ingestion Completed</span>
+                                <b className="subrow-val">{(f.ingestion_end_time || f.upload_end_time) ? (f.ingestion_end_time || f.upload_end_time)!.replace('T', ' ').slice(0, 19) : '—'}</b>
                               </div>
 
                               <div className="subrow-block">
                                 <span className="subrow-label"><Database size={13} /> Ingestion Duration</span>
-                                <b className="subrow-val">{formatDuration(f.upload_start_time, f.upload_end_time)}</b>
+                                <b className="subrow-val">{formatDuration(f.ingestion_start_time || f.upload_start_time, f.ingestion_end_time || f.upload_end_time)}</b>
                               </div>
 
                               <div className="subrow-block subrow-grow">
