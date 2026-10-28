@@ -202,6 +202,9 @@ Ensure you have the following installed on your system:
 In your backend terminal (with `.venv` activated):
 ```bash
 uvicorn app.main:app --reload --port 8000
+
+
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 - **API Base URL**: `http://localhost:8000`

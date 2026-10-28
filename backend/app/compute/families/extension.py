@@ -4,7 +4,7 @@
     Anchor: LEVER_SEL_DN 0->1 (instead of UP)
     Window: next trigger (any type) or +45s cap
 
-Only steps 3 and 4 differ from retraction — the gear comes out of its uplock
+Only steps 3 and 4 (the gear signals) differ from retraction — the gear comes out of its uplock
 and into its downlock, the mirror of going up:
 
     step 3  gear uplock release   <gear>_LOCKED_UP    1->0
@@ -27,6 +27,12 @@ FAMILY = "extension"
 WINDOW_CAP_S = 45.0
 ANCHOR_DEBOUNCE_S = 1.0
 
+#: Step order: 1 door unlock, 2 open limit reached, 3 gear uplock release,
+#: 4 gear downlock, 5 door close (open limit leaves), 6 door lock.
+#: Step 3 may coincide with step 2 and step 5 with step 4 (limit-switch signals);
+#: steps 2, 4 and 6 stay strictly after their predecessor.
+INCLUSIVE_STEPS = (True, False, True, False, True, False)
+
 ANCHOR = EventKey("Data-1", "uc_lever_sel_dn", RISING)
 #: The retraction anchor — "next trigger (any type)" closes the window.
 RETRACTION_ANCHOR = EventKey("Data-1", "uc_lever_sel_up", RISING)
@@ -41,6 +47,7 @@ SPEC = CycleSpec(
     gear_param="{door}_GEAR_EXTENSION_TIME",
     window_cap_s=WINDOW_CAP_S,
     anchor_debounce_s=ANCHOR_DEBOUNCE_S,
+    inclusive_steps=INCLUSIVE_STEPS,
 )
 
 EVENT_KEYS = SPEC.event_keys | {RETRACTION_ANCHOR}
